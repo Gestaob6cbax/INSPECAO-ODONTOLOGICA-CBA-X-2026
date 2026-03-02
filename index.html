@@ -10,6 +10,7 @@
 <style>
 body { font-family: Arial; background:#f2f4f8; margin:0; }
 header { background:#0a2c6d; color:white; text-align:center; padding:20px; }
+header img { width:120px; }
 .container { background:white; max-width:800px; margin:30px auto; padding:25px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
 label { font-weight:bold; margin-top:15px; display:block; }
 input, select { width:100%; padding:8px; margin-top:5px; }
@@ -21,32 +22,78 @@ button:hover { background:#900000; }
 <body>
 
 <header>
+<img src="logo.png">
 <h1>Agendamento Odontológico 2026</h1>
-<p>CBAX - Salvamento Marítimo</p>
+<p>Comando de Bombeiros de Área X</p>
 </header>
 
 <div class="container">
 
+<h2>Dados do Militar</h2>
+
+<label>Unidade que Serve:</label>
+<select id="unidadeServe">
+<option value="">Selecione</option>
+<option>CBA X</option>
+<option>1º GMAR (Botafogo)</option>
+<option>2º GMAR (Barra da Tijuca)</option>
+<option>3º GMAR (Copacabana)</option>
+<option>4º GMAR (Itaipu)</option>
+<option>DBM 1/M (Paquetá)</option>
+<option>DBM 2/M (Piscinão de Ramos)</option>
+<option>DBM 3/M (Recreio)</option>
+<option>DBM 4/M (Barra de Guaratiba)</option>
+<option>DBM 5/M (Sepetiba)</option>
+<option>DBM 6/M (Itaipu)</option>
+<option>CER (Coordenadoria de Embarcações de Resgate)</option>
+</select>
+
+<label>Posto/Graduação:</label>
+<select id="posto">
+<option value="">Selecione</option>
+<option>CEL BM</option>
+<option>TC BM</option>
+<option>MAJ BM</option>
+<option>CAP BM</option>
+<option>1º TEN BM</option>
+<option>2º TEN BM</option>
+<option>ASP BM</option>
+<option>SUBTEN BM</option>
+<option>1º SGT BM</option>
+<option>2º SGT BM</option>
+<option>3º SGT BM</option>
+<option>CB BM</option>
+<option>SD BM</option>
+</select>
+
+<label>Nome Completo:</label>
+<input type="text" id="nome">
+
+<label>RG:</label>
+<input type="text" id="rg">
+
+<label>Telefone:</label>
+<input type="text" id="telefone">
+
+<label>Email:</label>
+<input type="email" id="email">
+
 <h2>Agendamento</h2>
 
-<label>Unidade:</label>
+<label>Unidade de Atendimento:</label>
 <select id="unidade" onchange="carregarDatas()">
 <option value="">Selecione</option>
 <option value="1GMAR">1º GMAR - BOTAFOGO</option>
-<option value="2GMAR">2º GMAR - BARRA</option>
+<option value="2GMAR">2º GMAR - BARRA (GBS)</option>
 <option value="3GMAR">3º GMAR - COPACABANA</option>
-<option value="4GMAR">4º GMAR - ITAIPU</option>
+<option value="4GMAR">4º GMAR - ITAIPU (CEPO)</option>
 </select>
 
 <label>Data:</label>
-<select id="data" onchange="carregarHorarios()">
-<option value="">Selecione a unidade primeiro</option>
-</select>
+<select id="data" onchange="carregarHorarios()"></select>
 
 <label>Horário:</label>
-<select id="horario">
-<option value="">Selecione unidade e data</option>
-</select>
+<select id="horario"></select>
 
 <button onclick="salvar()">Confirmar Agendamento</button>
 
@@ -54,7 +101,6 @@ button:hover { background:#900000; }
 
 <script>
 
-// 🔥 CONFIG FIREBASE (MANTENHA O SEU ORIGINAL SE FOR DIFERENTE)
 const firebaseConfig = {
 apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
 authDomain: "agendamento-odonto-cbax.firebaseapp.com",
@@ -68,10 +114,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const datas = {
-"1GMAR":["11/03/26","18/03/26","25/03/26"],
-"2GMAR":["10/03/26","17/03/26","24/03/26"],
-"3GMAR":["10/03/26","17/03/26","24/03/26"],
-"4GMAR":["10/04/26","17/04/26"]
+"1GMAR":["11/03/26","18/03/26","25/03/26","01/04/26","08/04/26","06/05/26","13/05/26","20/05/26","27/05/26","03/06/26","10/06/26","17/06/26","24/06/26","01/07/26","08/07/26","15/07/26","22/07/26","29/07/26"],
+"2GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+"3GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","07/04/26","14/04/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+"4GMAR":["10/04/26","17/04/26","08/05/26","15/05/26","22/05/26","29/05/26","05/06/26","12/06/26","19/06/26","26/06/26","03/07/26","10/07/26","17/07/26","24/07/26","31/07/26"]
 };
 
 function gerarHorarios(inicio, quantidade){
@@ -90,7 +136,7 @@ let selectData=document.getElementById("data");
 let selectHorario=document.getElementById("horario");
 
 selectData.innerHTML="";
-selectHorario.innerHTML="<option>Selecione a data</option>";
+selectHorario.innerHTML="";
 
 if(!unidade) return;
 
@@ -100,22 +146,19 @@ op.value=d;
 op.text=d;
 selectData.appendChild(op);
 });
+
+carregarHorarios(); // já carrega horários automaticamente
 }
 
 function carregarHorarios(){
 let unidade=document.getElementById("unidade").value;
-let data=document.getElementById("data").value;
 let selectHorario=document.getElementById("horario");
 
 selectHorario.innerHTML="";
 
-if(!unidade || !data){
-selectHorario.innerHTML="<option>Selecione unidade e data</option>";
-return;
-}
+if(!unidade) return;
 
 let horarios=[];
-
 if(unidade==="1GMAR") horarios=gerarHorarios("08:00",14);
 if(unidade==="2GMAR") horarios=[...gerarHorarios("08:00",14),...gerarHorarios("13:00",7)];
 if(unidade==="3GMAR") horarios=gerarHorarios("08:00",11);
@@ -130,7 +173,41 @@ selectHorario.appendChild(op);
 }
 
 async function salvar(){
-alert("Teste OK - Horários funcionando");
+let unidade=document.getElementById("unidade").value;
+let data=document.getElementById("data").value;
+let horario=document.getElementById("horario").value;
+
+if(!unidade||!data||!horario){
+alert("Selecione unidade, data e horário.");
+return;
+}
+
+const consulta=await db.collection("agendamentos")
+.where("unidade","==",unidade)
+.where("data","==",data)
+.where("horario","==",horario)
+.get();
+
+if(!consulta.empty){
+alert("Horário já preenchido!");
+return;
+}
+
+await db.collection("agendamentos").add({
+unidadeServe:document.getElementById("unidadeServe").value,
+posto:document.getElementById("posto").value,
+nome:document.getElementById("nome").value,
+rg:document.getElementById("rg").value,
+telefone:document.getElementById("telefone").value,
+email:document.getElementById("email").value,
+unidade,
+data,
+horario,
+criadoEm:new Date()
+});
+
+alert("Agendamento realizado com sucesso!");
+location.reload();
 }
 
 </script>
