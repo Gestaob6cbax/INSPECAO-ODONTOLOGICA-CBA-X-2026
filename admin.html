@@ -16,7 +16,6 @@ th, td { border:1px solid #ddd; padding:8px; text-align:center;}
 th { background:#0a2c6d; color:white;}
 button { margin-top:20px; padding:10px 20px; background:#c00000; color:white; border:none; cursor:pointer;}
 button:hover { background:#900000;}
-select { padding:8px; margin-right:10px;}
 </style>
 </head>
 
@@ -29,21 +28,6 @@ select { padding:8px; margin-right:10px;}
 
 <div class="container">
 
-<h3>Filtros</h3>
-
-<select id="filtroUnidade">
-<option value="">Todas as Unidades</option>
-<option value="1GMAR">1º GMAR</option>
-<option value="2GMAR">2º GMAR</option>
-<option value="3GMAR">3º GMAR</option>
-<option value="4GMAR">4º GMAR</option>
-</select>
-
-<select id="filtroData">
-<option value="">Todas as Datas</option>
-</select>
-
-<button onclick="carregarDados()">Filtrar</button>
 <button onclick="exportarExcel()">Exportar para Excel</button>
 
 <table id="tabela">
@@ -80,12 +64,7 @@ const db = firebase.firestore();
 
 async function carregarDados(){
 
-const unidadeFiltro = document.getElementById("filtroUnidade").value;
-const dataFiltro = document.getElementById("filtroData").value;
-
-let query = db.collection("agendamentos");
-
-const snapshot = await query.get();
+const snapshot = await db.collection("agendamentos").orderBy("criadoEm","desc").get();
 
 const tbody = document.querySelector("#tabela tbody");
 tbody.innerHTML="";
@@ -93,40 +72,31 @@ tbody.innerHTML="";
 snapshot.forEach(doc=>{
 const d = doc.data();
 
-// corrigindo possíveis nomes diferentes
-const unidade = d.unidade || d.unidadeAtendimento || "-";
-const data = d.data ? d.data : (d.criadoEm ? new Date(d.criadoEm.seconds * 1000).toLocaleDateString("pt-BR") : "-");
-const horario = d.horario || "-";
-const nome = d.nome || "-";
-const posto = d.posto || d.postoGraduacao || "-";
-const rg = d.rg || "-";
-const telefone = d.telefone || "-";
-const email = d.email || "-";
-
 tbody.innerHTML += `
 <tr>
-<td>${unidade}</td>
-<td>${data}</td>
-<td>${horario}</td>
-<td>${nome}</td>
-<td>${posto}</td>
-<td>${rg}</td>
-<td>${telefone}</td>
-<td>${email}</td>
+<td>${d.unidadeServe || "-"}</td>
+<td>${d.data || "-"}</td>
+<td>${d.horario || "-"}</td>
+<td>${d.nome || "-"}</td>
+<td>${d.posto || "-"}</td>
+<td>${d.rg || "-"}</td>
+<td>${d.telefone || "-"}</td>
+<td>${d.email || "-"}</td>
 </tr>
 `;
 });
+
 }
 
 async function exportarExcel(){
 
 const snapshot = await db.collection("agendamentos").get();
 
-let csv = "Unidade,Data,Horário,Nome,Posto,RG,Telefone,Email\n";
+let csv = "Unidade que Serve,Data,Horário,Nome,Posto,RG,Telefone,Email\n";
 
 snapshot.forEach(doc=>{
 const d = doc.data();
-csv += `${d.unidade},${d.data},${d.horario},${d.nome},${d.posto},${d.rg},${d.telefone},${d.email}\n`;
+csv += `${d.unidadeServe || ""},${d.data || ""},${d.horario || ""},${d.nome || ""},${d.posto || ""},${d.rg || ""},${d.telefone || ""},${d.email || ""}\n`;
 });
 
 const blob = new Blob([csv], { type: "text/csv" });
