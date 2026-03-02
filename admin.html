@@ -1,1 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Painel Administrativo - CBA X</title>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+body { font-family: Arial; background:#f2f4f8; margin:0; }
+header { background:#0a2c6d; color:white; text-align:center; padding:20px; }
+.container { max-width:1100px; margin:30px auto; background:white; padding:25px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+table { width:100%; border-collapse: collapse; margin-top:20px;}
+th, td { border:1px solid #ddd; padding:8px; text-align:center;}
+th { background:#0a2c6d; color:white;}
+button { margin-top:20px; padding:10px 20px; background:#c00000; color:white; border:none; cursor:pointer;}
+button:hover { background:#900000;}
+select { padding:8px; margin-right:10px;}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Painel Administrativo</h1>
+<p>Agendamento Odontológico 2026 - CBA X</p>
+</header>
+
+<div class="container">
+
+<h3>Filtros</h3>
+
+<select id="filtroUnidade">
+<option value="">Todas as Unidades</option>
+<option value="1GMAR">1º GMAR</option>
+<option value="2GMAR">2º GMAR</option>
+<option value="3GMAR">3º GMAR</option>
+<option value="4GMAR">4º GMAR</option>
+</select>
+
+<select id="filtroData">
+<option value="">Todas as Datas</option>
+</select>
+
+<button onclick="carregarDados()">Filtrar</button>
+<button onclick="exportarExcel()">Exportar para Excel</button>
+
+<table id="tabela">
+<thead>
+<tr>
+<th>Unidade</th>
+<th>Data</th>
+<th>Horário</th>
+<th>Nome</th>
+<th>Posto</th>
+<th>RG</th>
+<th>Telefone</th>
+<th>Email</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+</div>
+
+<script>
+
+const firebaseConfig = {
+apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
+authDomain: "agendamento-odonto-cbax.firebaseapp.com",
+projectId: "agendamento-odonto-cbax",
+storageBucket: "agendamento-odonto-cbax.firebasestorage.app",
+messagingSenderId: "545212689993",
+appId: "1:545212689993:web:b4b85a03bb2dcac9739998"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+async function carregarDados(){
+
+const unidadeFiltro = document.getElementById("filtroUnidade").value;
+const dataFiltro = document.getElementById("filtroData").value;
+
+let query = db.collection("agendamentos");
+
+if(unidadeFiltro){
+query = query.where("unidade","==",unidadeFiltro);
+}
+
+if(dataFiltro){
+query = query.where("data","==",dataFiltro);
+}
+
+const snapshot = await query.get();
+
+const tbody = document.querySelector("#tabela tbody");
+tbody.innerHTML="";
+
+snapshot.forEach(doc=>{
+const d = doc.data();
+
+tbody.innerHTML += `
+<tr>
+<td>${d.unidade}</td>
+<td>${d.data}</td>
+<td>${d.horario}</td>
+<td>${d.nome}</td>
+<td>${d.posto}</td>
+<td>${d.rg}</td>
+<td>${d.telefone}</td>
+<td>${d.email}</td>
+</tr>
+`;
+});
+
+}
+
+async function exportarExcel(){
+
+const snapshot = await db.collection("agendamentos").get();
+
+let csv = "Unidade,Data,Horário,Nome,Posto,RG,Telefone,Email\n";
+
+snapshot.forEach(doc=>{
+const d = doc.data();
+csv += `${d.unidade},${d.data},${d.horario},${d.nome},${d.posto},${d.rg},${d.telefone},${d.email}\n`;
+});
+
+const blob = new Blob([csv], { type: "text/csv" });
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = "agendamentos_2026.csv";
+a.click();
+window.URL.revokeObjectURL(url);
+
+}
+
+carregarDados();
+
+</script>
+
+</body>
+</html>
