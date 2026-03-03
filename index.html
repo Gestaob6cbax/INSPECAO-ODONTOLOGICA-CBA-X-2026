@@ -3,50 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento Odontológico 2026 - CBA X</title>
-
+    <title>Agendamento Odontológico 2026</title>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f4f7f9; margin: 0; padding: 0; color: #1a1a1a; }
-        header { background: #0a2c6d; color: white; text-align: center; padding: 30px 15px; border-bottom: 5px solid #082152; }
-        header img { width: 80px; margin-bottom: 10px; }
-        header h1 { font-size: 1.3rem; margin: 5px 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 0; }
+        header { background: #0a2c6d; color: white; text-align: center; padding: 20px; border-bottom: 5px solid #082152; }
         .container { background: white; width: 94%; max-width: 500px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { font-size: 1.1rem; color: #0a2c6d; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 25px; text-transform: uppercase; }
-        label { font-weight: 600; margin-top: 15px; display: block; font-size: 0.9rem; }
+        h2 { font-size: 1.1rem; color: #0a2c6d; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+        label { font-weight: bold; margin-top: 15px; display: block; font-size: 0.9rem; }
         input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ced4da; border-radius: 8px; font-size: 16px; }
-        
-        /* Alerta de Vagas - Estilo Inspeção */
-        .info-vagas { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; font-size: 0.9rem; font-weight: bold; }
-        
-        .btn-principal { margin-top: 30px; padding: 18px; background: #063958; color: white; border: none; width: 100%; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; }
-        .confirmacao-card { display: none; background: white; padding: 20px; border-radius: 15px; border: 1px solid #e1e4e8; }
-        .info-row { margin-bottom: 10px; font-size: 1.1rem; border-bottom: 1px solid #f9f9f9; }
-        .info-label { font-weight: bold; }
+        .info-vagas { background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; margin-top: 15px; font-weight: bold; text-align: center; border: 1px solid #ffeeba; }
+        .btn-principal { margin-top: 25px; padding: 18px; background: #063958; color: white; border: none; width: 100%; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; }
+        .btn-principal:disabled { background: #ccc; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="logo.png" alt="Logo">
-    <h1>Agendamento Odontológico 2026</h1>
-    <p>Comando de Bombeiros de Área X</p>
+    <h1>Agendamento Odontológico</h1>
+    <p>CBA X - 2026</p>
 </header>
 
 <div class="container" id="formContainer">
     <h2>Dados do Militar</h2>
-    <label>Nome Completo:</label>
-    <input type="text" id="nome" placeholder="Nome">
-    <label>RG:</label>
-    <input type="number" id="rg" placeholder="Somente números">
-    <label>Telefone:</label>
-    <input type="text" id="telefone" placeholder="(XX) XXXXX-XXXX">
-
-    <h2>Agendamento</h2>
+    <input type="text" id="nome" placeholder="Nome Completo">
+    <input type="number" id="rg" placeholder="RG (somente números)">
+    
+    <h2>Local e Data</h2>
     <label>Unidade de Atendimento:</label>
     <select id="unidade" onchange="carregarDatas()">
         <option value="">Selecione</option>
@@ -61,16 +46,14 @@
 
     <div id="vagasStatus" class="info-vagas" style="display:none;"></div>
 
-    <label>Horário Disponível:</label>
+    <label>Horário:</label>
     <select id="horario"></select>
 
     <button class="btn-principal" id="btnAgendar" onclick="salvar()">Confirmar Agendamento</button>
 </div>
 
-<div class="container" id="confirmacaoBox" style="display:none;"></div>
-
 <script>
-    // CONFIGURAÇÃO FIREBASE (MANTIDA)
+    // Configuração do seu Firebase (Mantenha os seus dados aqui)
     const firebaseConfig = {
         apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
         authDomain: "agendamento-odonto-cbax.firebaseapp.com",
@@ -83,19 +66,19 @@
     const db = firebase.firestore();
 
     const datasMap = {
-        "1GMAR":["11/03/26","18/03/26","25/03/26"], // Exemplo reduzido para teste
-        "2GMAR":["10/03/26","17/03/26"],
+        "1GMAR":["11/03/26","18/03/26"],
+        "2GMAR":["10/03/26","17/03/26","24/03/26"],
         "3GMAR":["10/03/26","17/03/26"],
         "4GMAR":["10/04/26","17/04/26"]
     };
 
     function carregarDatas(){
         let uni = document.getElementById("unidade").value;
-        let sel = document.getElementById("data");
-        sel.innerHTML = "";
+        let selD = document.getElementById("data");
+        selD.innerHTML = "";
         if(!uni) return;
         datasMap[uni].forEach(d => {
-            let op = document.createElement("option"); op.value=d; op.text=d; sel.appendChild(op);
+            let op = document.createElement("option"); op.value=d; op.text=d; selD.appendChild(op);
         });
         carregarHorarios();
     }
@@ -106,55 +89,41 @@
         let selH = document.getElementById("horario");
         let status = document.getElementById("vagasStatus");
         
-        selH.innerHTML = "<option>Verificando vagas...</option>";
-        
-        // Define horários totais por unidade
-        let todosHorarios = (uni === "2GMAR") ? ["08:00","08:15","08:30","13:00","13:15"] : ["08:00","08:15","08:30","08:45"];
+        if(!uni || !data) return;
+        selH.innerHTML = "<option>Consultando...</option>";
 
-        // BUSCA NO BANCO O QUE JÁ FOI OCUPADO
+        // Horários do GBS (2GMAR)
+        let todos = (uni === "2GMAR") ? ["08:00","08:15","08:30","08:45","09:00","13:00","13:15"] : ["08:00","08:15","08:30"];
+
+        // BUSCA O QUE JÁ ESTÁ NO BANCO
         const snapshot = await db.collection("agendamentos")
             .where("unidade", "==", uni)
             .where("data", "==", data)
             .get();
         
         let ocupados = snapshot.docs.map(doc => doc.data().horario);
-        let disponiveis = todosHorarios.filter(h => !ocupados.includes(h));
+        
+        // FILTRA: Só mostra o que NÃO está ocupado
+        let disponiveis = todos.filter(h => !ocupados.includes(h));
 
         selH.innerHTML = "";
+        status.style.display = "block";
+
         if(disponiveis.length > 0){
             disponiveis.forEach(h => {
                 let op = document.createElement("option"); op.value=h; op.text=h; selH.appendChild(op);
             });
-            status.style.display = "block";
-            status.innerHTML = `VAGAS DISPONÍVEIS NESTE DIA: ${disponiveis.length}`;
+            status.innerHTML = `VAGAS DISPONÍVEIS: ${disponiveis.length}`;
             document.getElementById("btnAgendar").disabled = false;
         } else {
             selH.innerHTML = "<option>LOTADO</option>";
-            status.style.display = "block";
-            status.innerHTML = "❌ NÃO HÁ VAGAS NESTE DIA";
+            status.innerHTML = "❌ DIA SEM VAGAS";
             document.getElementById("btnAgendar").disabled = true;
         }
     }
 
-    // Função Salvar e Mostrar Confirmacao (Mantidas as melhorias visuais anteriores)
     async function salvar(){
-        // ... (Logica de salvar no Firebase)
-        // Ao final, chama mostrarConfirmacao(dados)
-    }
-
-    function mostrarConfirmacao(d){
-        document.getElementById("formContainer").style.display = "none";
-        let box = document.getElementById("confirmacaoBox");
-        box.style.display = "block";
-        box.innerHTML = `
-            <h3>✅ Agendamento Confirmado</h3>
-            <div class="info-row"><span class="info-label">Nome:</span> ${d.nome}</div>
-            <div class="info-row"><span class="info-label">Local:</span> ${d.unidade}</div>
-            <div class="info-row"><span class="info-label">Data:</span> ${d.data}</div>
-            <div class="info-row"><span class="info-label">Horário:</span> ${d.horario}</div>
-            <button class="btn-principal" onclick="window.print()">Imprimir</button>
-            <button class="btn-principal" style="background:#555" onclick="location.reload()">Novo</button>
-        `;
+        // Função de salvar padrão (já enviada anteriormente)
     }
 </script>
 </body>
