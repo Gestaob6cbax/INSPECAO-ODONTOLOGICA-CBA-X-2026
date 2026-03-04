@@ -18,7 +18,7 @@
     input[type=password], input[type=text] { padding:12px; width:100%; border:1px solid #ccc; border-radius:4px; box-sizing: border-box; font-size: 16px; }
     .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; background:none; border:none; font-size:20px; }
 
-    .top-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-bottom: 20px; }
+    .top-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-bottom: 20px; gap: 10px; }
     table { width:100%; border-collapse: collapse; }
     th, td { border:1px solid #ddd; padding:10px; text-align:center; font-size: 12px;}
     th { background:#0a2c6d; color:white; text-transform: uppercase; }
@@ -28,18 +28,20 @@
     .btn-login { background:#0a2c6d; color:white; width: 100%; margin-top: 15px; }
     .btn-cancel { background:#c00000; color:white; }
     .btn-export { background:#28a745; color:white; }
-    
+    .btn-refresh { background:#007bff; color:white; } /* Cor do botão atualizar */
+    button:hover { opacity: 0.8; }
+
     .counter { font-size: 1.1rem; font-weight:bold; color: #0a2c6d; }
     .badge-local { background: #fff3cd; color: #856404; padding: 4px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #ffeeba; }
     .badge-origem { background: #e2e3e5; color: #383d41; padding: 4px 6px; border-radius: 4px; font-weight: normal; border: 1px solid #d6d8db; }
-    select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin: 0 5px; }
+    select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
 </style>
 </head>
 
 <body>
 
 <div id="login" class="login-box">
-    <img src="logo.png" style="width: 100px; margin-bottom: 15px;" alt="Logo CBAX" onerror="this.style.display='none'; console.log('Logo não encontrado');">
+    <img src="logo.png" style="width: 100px; margin-bottom: 15px;" alt="Logo CBAX" onerror="this.style.display='none';">
     <h2>Acesso Administrativo</h2>
     <div class="password-container">
         <input type="password" id="senha" placeholder="Digite a senha" onkeypress="if(event.key === 'Enter') verificarSenha()">
@@ -60,7 +62,7 @@
     <div class="container">
         <div class="top-bar">
             <div>
-                <label><strong>Filtrar por Local de Inspeção:</strong></label>
+                <label><strong>Filtrar:</strong></label>
                 <select id="filtroUnidadeAgendada" onchange="carregarDados()">
                     <option value="">Todos os Locais</option>
                     <option value="1GMAR">1º GMAR - BOTAFOGO</option>
@@ -68,6 +70,9 @@
                     <option value="3GMAR">3º GMAR - COPACABANA</option>
                     <option value="4GMAR">4º GMAR - ITAIPU (CEPO)</option>
                 </select>
+                <button class="btn-refresh" onclick="carregarDados()" title="Atualizar Lista">
+                    🔄 Atualizar Dados
+                </button>
             </div>
 
             <div>
@@ -83,7 +88,8 @@
                 <tr>
                     <th><input type="checkbox" id="selecionarTodos" onclick="toggleTodos()"></th>
                     <th>Local Inspeção</th>
-                    <th>Unidade Origem</th> <th>Data</th>
+                    <th>Unidade Origem</th>
+                    <th>Data</th>
                     <th>Horário</th>
                     <th>Nome</th>
                     <th>Posto</th>
@@ -133,8 +139,9 @@ const db = firebase.firestore();
 async function carregarDados(){
     const tabela = document.getElementById("tabela");
     const filtroLocal = document.getElementById("filtroUnidadeAgendada").value;
+    const contador = document.getElementById("contador");
     
-    tabela.innerHTML = "<tr><td colspan='10'>Buscando dados...</td></tr>";
+    tabela.innerHTML = "<tr><td colspan='10'>🔄 Buscando dados atualizados...</td></tr>";
 
     try {
         const snapshot = await db.collection("agendamentos").get();
@@ -144,7 +151,7 @@ async function carregarDados(){
         snapshot.forEach(doc => {
             const d = doc.data();
             const localInspecao = d.unidade || "Não informado";
-            const unidadeOrigem = d.unidadeServe || "CBA X"; // Unidade onde ele trabalha
+            const unidadeOrigem = d.unidadeServe || "CBA X";
 
             if(filtroLocal && !localInspecao.includes(filtroLocal)) return;
 
@@ -165,8 +172,11 @@ async function carregarDados(){
             `;
         });
 
-        document.getElementById("contador").innerText = total;
-    } catch (e) { tabela.innerHTML = "<tr><td colspan='10'>Erro ao carregar.</td></tr>"; }
+        contador.innerText = total;
+        if(total === 0) tabela.innerHTML = "<tr><td colspan='10'>Nenhum agendamento encontrado.</td></tr>";
+    } catch (e) { 
+        tabela.innerHTML = "<tr><td colspan='10' style='color:red;'>Erro ao carregar dados.</td></tr>"; 
+    }
 }
 
 function toggleTodos(){
@@ -176,16 +186,17 @@ function toggleTodos(){
 
 async function cancelarSelecionados(){
     const checks = document.querySelectorAll(".checkItem:checked");
-    if(checks.length === 0) return alert("Selecione algo.");
-    if(confirm("Deseja excluir os itens selecionados?")){
+    if(checks.length === 0) return alert("Selecione os agendamentos que deseja excluir.");
+    if(confirm(`Deseja excluir ${checks.length} agendamento(s)? Esta ação não pode ser desfeita.`)){
         for(let cb of checks) await db.collection("agendamentos").doc(cb.value).delete();
+        alert("Excluído com sucesso!");
         carregarDados();
     }
 }
 
 function exportarSelecionados(){
     const checks = document.querySelectorAll(".checkItem:checked");
-    if(checks.length === 0) return alert("Selecione para exportar.");
+    if(checks.length === 0) return alert("Selecione os itens para exportar.");
     
     const dados = Array.from(checks).map(cb => {
         const r = cb.closest('tr').cells;
@@ -205,7 +216,7 @@ function exportarSelecionados(){
     const ws = XLSX.utils.json_to_sheet(dados);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Agendamentos");
-    XLSX.writeFile(wb, "Relatorio_CBAX.xlsx");
+    XLSX.writeFile(wb, "Relatorio_Agendamentos_Odonto_2026.xlsx");
 }
 </script>
 </body>
