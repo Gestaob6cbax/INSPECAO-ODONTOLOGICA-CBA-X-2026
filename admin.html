@@ -10,94 +10,69 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { --cba-blue: #0a2c6d; --cba-gold: #b8860b; --cba-light: #e7f0ff; }
+        :root { --cba-blue: #0a2c6d; --cba-gold: #b8860b; --danger: #d9534f; --success: #28a745; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f9; margin: 0; }
         
         header { 
-            background: var(--cba-blue); 
-            color: white; 
-            padding: 30px; 
-            text-align: center; 
-            border-bottom: 5px solid var(--cba-gold);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            background: var(--cba-blue); color: white; padding: 25px; text-align: center; 
+            border-bottom: 5px solid var(--cba-gold); box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        header h1 { margin: 0; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
 
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
 
-        .stats-row { display: flex; gap: 20px; margin-bottom: 25px; }
-        .card { 
-            background: white; 
-            flex: 1; 
-            padding: 20px; 
-            border-radius: 12px; 
-            text-align: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border-left: 5px solid var(--cba-gold);
-        }
-        .card span { display: block; color: #888; text-transform: uppercase; font-size: 11px; font-weight: bold; margin-bottom: 8px; }
-        .card strong { font-size: 30px; color: var(--cba-blue); }
-
         .toolbar { 
-            background: white; 
-            padding: 15px 20px; 
-            border-radius: 12px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            background: white; padding: 15px 20px; border-radius: 12px; 
+            display: flex; gap: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            align-items: center; flex-wrap: wrap;
         }
-        .search-box { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        .btn-excel { background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .search-box { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; min-width: 200px; }
+
+        .btn { border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .btn-sync { background: var(--cba-blue); }
+        .btn-excel { background: var(--success); }
+        .btn-danger { background: var(--danger); display: none; } /* Escondido por padrão */
+        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
 
         .table-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #fcfcfc; color: #888; font-size: 11px; text-transform: uppercase; padding: 15px; text-align: left; border-bottom: 2px solid #f0f0f0; }
-        td { padding: 15px; font-size: 14px; border-bottom: 1px solid #f9f9f9; color: #444; }
-        tr:hover { background: #f0f5ff; }
-
-        .badge-local { background: var(--cba-light); color: var(--cba-blue); padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        th { background: #fcfcfc; color: #888; font-size: 11px; text-transform: uppercase; padding: 15px; text-align: left; border-bottom: 2px solid #eee; }
+        td { padding: 12px 15px; font-size: 14px; border-bottom: 1px solid #f9f9f9; }
+        
+        tr.selected { background-color: #fff5f5; }
+        .badge-local { background: #e7f0ff; color: var(--cba-blue); padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 11px; }
+        
+        input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Gestão de Agendamento Odontológico - 2026</h1>
-    <p>CBA X - Salvamento Marítimo</p>
+    <h1>Gestão de Agendamento Odontológico - CBA X</h1>
 </header>
 
 <div class="container">
-    <div class="stats-row">
-        <div class="card">
-            <span>Militares Agendados</span>
-            <strong id="total-count">0</strong>
-        </div>
-        <div class="card">
-            <span>Status</span>
-            <strong id="status-txt" style="color: #28a745; font-size: 18px;">CONECTADO</strong>
-        </div>
-    </div>
-
     <div class="toolbar">
         <input type="text" id="buscaNome" class="search-box" placeholder="Pesquisar militar..." onkeyup="filtrarTabela()">
-        <button class="btn-excel" onclick="exportarExcel()">📊 Exportar Excel</button>
+        
+        <button id="btnExcluirVarios" class="btn btn-danger" onclick="excluirSelecionados()">🗑️ Excluir Selecionados</button>
+        <button class="btn btn-sync" onclick="location.reload()">🔄 Atualizar</button>
+        <button class="btn btn-excel" onclick="exportarExcel()">📊 Excel</button>
     </div>
 
     <div class="table-container">
         <table>
             <thead>
                 <tr>
+                    <th><input type="checkbox" id="selecionarTodos" onclick="marcarTodos(this)"></th>
                     <th>Local Destino</th>
                     <th>Origem</th>
-                    <th>Data/Hora</th>
-                    <th>Posto/Grad</th>
-                    <th>Nome</th>
+                    <th>Posto/Nome</th>
                     <th>RG</th>
+                    <th>Data/Hora</th>
                 </tr>
             </thead>
-            <tbody id="tabela-dados">
-                </tbody>
+            <tbody id="tabela-dados"></tbody>
         </table>
     </div>
 </div>
@@ -115,37 +90,62 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ESSA PARTE ABAIXO É A QUE PUXA OS DADOS DE VERDADE
-    db.collection("agendamentos").onSnapshot((snapshot) => {
+    // Carregar dados
+    db.collection("agendamentos").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
         const tabela = document.getElementById("tabela-dados");
-        document.getElementById("total-count").innerText = snapshot.size;
         tabela.innerHTML = "";
-
-        if (snapshot.empty) {
-            tabela.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px;'>Nenhum dado encontrado no banco.</td></tr>";
-        }
 
         snapshot.forEach((doc) => {
             const d = doc.data();
-            // Aqui eu forço o código a aceitar qualquer nome de campo (unidadeDestino, local, ou unidade)
-            const localDestino = d.unidadeDestino || d.local || d.unidade || "---";
-            const localOrigem = d.unidadeOrigem || d.origem || "---";
+            const id = doc.id;
 
             tabela.innerHTML += `
-                <tr>
-                    <td><span class="badge-local">${localDestino}</span></td>
-                    <td>${localOrigem}</td>
-                    <td>${d.data || ''} - ${d.horario || ''}</td>
-                    <td>${d.posto || ''}</td>
-                    <td style="font-weight:bold;">${d.nome || ''}</td>
+                <tr id="row-${id}">
+                    <td><input type="checkbox" class="check-item" value="${id}" onclick="atualizarBotaoExcluir()"></td>
+                    <td><span class="badge-local">${d.unidadeDestino || d.local || '---'}</span></td>
+                    <td>${d.unidadeOrigem || '---'}</td>
+                    <td><b>${d.posto || ''} ${d.nome || ''}</b></td>
                     <td>${d.rg || ''}</td>
+                    <td>${d.data || ''} - ${d.horario || ''}</td>
                 </tr>
             `;
         });
-    }, (error) => {
-        document.getElementById("status-txt").innerText = "ERRO DE CONEXÃO";
-        document.getElementById("status-txt").style.color = "red";
+        atualizarBotaoExcluir();
     });
+
+    // Marcar/Desmarcar todos
+    function marcarTodos(master) {
+        const checks = document.querySelectorAll('.check-item');
+        checks.forEach(c => c.checked = master.checked);
+        atualizarBotaoExcluir();
+    }
+
+    // Mostrar/Esconder botão de excluir
+    function atualizarBotaoExcluir() {
+        const selecionados = document.querySelectorAll('.check-item:checked').length;
+        const btn = document.getElementById('btnExcluirVarios');
+        btn.style.display = selecionados > 0 ? 'flex' : 'none';
+        btn.innerText = `🗑️ Excluir Selecionados (${selecionados})`;
+    }
+
+    // Exclusão em Massa
+    async function excluirSelecionados() {
+        const selecionados = document.querySelectorAll('.check-item:checked');
+        if (confirm(`Tem certeza que deseja excluir ${selecionados.length} agendamentos de uma vez?`)) {
+            
+            const promises = Array.from(selecionados).map(cb => {
+                return db.collection("agendamentos").doc(cb.value).delete();
+            });
+
+            try {
+                await Promise.all(promises);
+                alert("Agendamentos excluídos com sucesso!");
+                document.getElementById('selecionarTodos').checked = false;
+            } catch (error) {
+                alert("Erro ao excluir alguns registros: " + error);
+            }
+        }
+    }
 
     function filtrarTabela() {
         const termo = document.getElementById("buscaNome").value.toUpperCase();
@@ -156,7 +156,7 @@
 
     function exportarExcel() {
         const wb = XLSX.utils.table_to_book(document.querySelector("table"));
-        XLSX.writeFile(wb, "Relatorio_CBAX_Odonto.xlsx");
+        XLSX.writeFile(wb, "Agendamentos_Odonto_CBAX.xlsx");
     }
 </script>
 </body>
