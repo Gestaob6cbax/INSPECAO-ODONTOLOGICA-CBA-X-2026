@@ -2,107 +2,40 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADM - Inspeção Odontológica 2026 - CBA X</title>
-    
+    <title>ADM - LISTA FINAL CBA X</title>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
-        :root { --cba-blue: #0a2c6d; --cba-gold: #b8860b; --success: #28a745; --danger: #dc3545; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f4f7f9; margin: 0; color: #333; }
-        header { background: var(--cba-blue); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--cba-gold); }
-        header h1 { margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1.5px; }
-        header p { margin: 5px 0 0; opacity: 0.8; font-size: 14px; }
-        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
-        .stats-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-        .stat-card { background: white; padding: 15px 25px; border-radius: 10px; flex: 1; min-width: 250px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--cba-blue); display: flex; justify-content: space-between; align-items: center; }
-        .stat-info span { display: block; font-size: 12px; color: #777; font-weight: bold; text-transform: uppercase; }
-        .stat-info strong { font-size: 24px; color: var(--cba-blue); }
-        .controls { background: white; padding: 20px; border-radius: 10px; display: flex; gap: 15px; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex-wrap: wrap; }
-        .controls select, .controls input { padding: 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; outline: none; }
-        .search-input { flex-grow: 2; min-width: 200px; }
-        button { padding: 10px 18px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-        .btn-refresh { background: #eee; color: #333; }
-        .btn-danger { background: var(--danger); color: white; display: none; }
-        .btn-export { background: var(--success); color: white; margin-left: auto; }
-        .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #f8f9fa; padding: 12px 15px; text-align: left; font-size: 11px; color: #888; border-bottom: 2px solid #eee; text-transform: uppercase; }
-        td { padding: 12px 15px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
-        tr:hover { background: #f9fbff; }
-        .badge-local { background: #e7f0ff; color: #0a2c6d; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .btn-delete-row { color: #ccc; background: none; border: none; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .btn-delete-row:hover { color: var(--danger); }
-        @media print { .controls, .col-check, .col-del, .btn-refresh { display: none !important; } }
+        body { font-family: sans-serif; padding: 20px; background: #eef2f7; }
+        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #0a2c6d; border-bottom: 2px solid #b8860b; padding-bottom: 10px; }
+        #status { padding: 10px; margin-bottom: 20px; font-weight: bold; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #0a2c6d; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Painel Administrativo - Odontologia 2026</h1>
-    <p>Comando de Bombeiros de Área - CBA X</p>
-</header>
+<div class="box">
+    <h2>Relatório de Agendamentos - CBA X</h2>
+    <div id="status" style="background: #fff3cd; color: #856404;">Conectando ao Firebase...</div>
 
-<div class="container">
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-info">
-                <span>Total de Agendados</span>
-                <strong id="contador">0</strong>
-            </div>
-            <div style="font-size: 30px;">👥</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-info">
-                <span>Conexão Database</span>
-                <strong id="status-db" style="color: var(--success); font-size: 16px;">Conectado</strong>
-            </div>
-            <div id="db-icon" style="font-size: 30px;">📡</div>
-        </div>
-    </div>
-
-    <div class="controls">
-        <select id="filtroUnidadeAgendada" onchange="renderizarTabela(this.value)">
-            <option value="">Todos os Locais de Inspeção</option>
-            <option value="1GMAR">1º GMAR - BOTAFOGO</option>
-            <option value="2GMAR">2º GMAR - BARRA</option>
-            <option value="3GMAR">3º GMAR - COPACABANA</option>
-            <option value="4GMAR">4º GMAR - ITAIPU</option>
-        </select>
-
-        <input type="text" id="buscaNome" class="search-input" placeholder="Buscar por Nome ou RG..." onkeyup="filtrarTabelaLocal()">
-
-        <button class="btn-refresh" onclick="carregarDados()">🔄 Atualizar</button>
-        
-        <button id="btnExcluirMassa" class="btn-danger" onclick="cancelarSelecionados()">
-            🗑️ Excluir Selecionados (<span id="numSel">0</span>)
-        </button>
-
-        <button class="btn-export" onclick="exportarExcel()">📊 Exportar para Excel</button>
-    </div>
-
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th class="col-check" width="40"><input type="checkbox" id="selecionarTodos" onclick="toggleTodos()"></th>
-                    <th>Local Destino</th>
-                    <th>Origem</th>
-                    <th>Data</th>
-                    <th>Hora</th>
-                    <th>Posto/Grad</th>
-                    <th>Nome Completo</th>
-                    <th>RG</th>
-                    <th class="col-del" width="50">Ação</th>
-                </tr>
-            </thead>
-            <tbody id="tabela">
-                <tr><td colspan="9" style="padding: 50px; text-align: center; color: #999;">Carregando dados...</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Militar</th>
+                <th>RG</th>
+                <th>Data / Hora</th>
+                <th>Destino</th>
+                <th>Origem</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-corpo">
+            <tr><td colspan="5" style="text-align:center">Buscando dados...</td></tr>
+        </tbody>
+    </table>
 </div>
 
 <script>
@@ -117,95 +50,48 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let dadosLocais = [];
 
-    async function carregarDados() {
-        const tabela = document.getElementById("tabela");
-        try {
-            const snapshot = await db.collection("agendamentos").orderBy("timestamp", "desc").get();
-            dadosLocais = [];
-            snapshot.forEach(doc => {
-                const item = doc.data();
-                item.id = doc.id;
-                dadosLocais.push(item);
+    // TENTATIVA DE LEITURA TOTAL
+    db.collection("agendamentos").get().then((querySnapshot) => {
+        const tabela = document.getElementById("tabela-corpo");
+        const status = document.getElementById("status");
+        
+        if (querySnapshot.empty) {
+            status.style.background = "#f8d7da";
+            status.style.color = "#721c24";
+            status.innerHTML = "Atenção: A coleção 'agendamentos' existe, mas está vazia no banco de dados.";
+            tabela.innerHTML = "<tr><td colspan='5'>Nenhum registro encontrado no Firebase.</td></tr>";
+        } else {
+            status.style.background = "#d4edda";
+            status.style.color = "#155724";
+            status.innerHTML = "Sucesso! Encontramos " + querySnapshot.size + " militares agendados.";
+            
+            tabela.innerHTML = "";
+            querySnapshot.forEach((doc) => {
+                const d = doc.data();
+                // Aqui o código tenta pegar qualquer nome de coluna que você tenha usado
+                const nomeMilitar = (d.posto || '') + " " + (d.nome || d.NOME || '');
+                const rgMilitar = d.rg || d.RG || '---';
+                const dataHora = (d.data || d.DATA || '') + " às " + (d.horario || d.HORA || '');
+                const destino = d.unidadeDestino || d.LOCAL || '---';
+                const origem = d.unidadeOrigem || '---';
+
+                tabela.innerHTML += `
+                    <tr>
+                        <td>${nomeMilitar}</td>
+                        <td>${rgMilitar}</td>
+                        <td>${dataHora}</td>
+                        <td>${destino}</td>
+                        <td>${origem}</td>
+                    </tr>
+                `;
             });
-            renderizarTabela();
-        } catch (e) {
-            tabela.innerHTML = `<tr><td colspan='9' style='color:red;'>Erro: ${e.message}</td></tr>`;
         }
-    }
-
-    function renderizarTabela(filtro = "") {
-        const tabela = document.getElementById("tabela");
-        const contador = document.getElementById("contador");
-        tabela.innerHTML = "";
-        let total = 0;
-
-        dadosLocais.forEach(d => {
-            if (filtro && d.unidadeDestino !== filtro) return;
-
-            total++;
-            tabela.innerHTML += `
-                <tr data-nome="${d.nome}" data-rg="${d.rg}">
-                    <td class="col-check"><input type="checkbox" class="checkItem" value="${d.id}" onchange="atualizarBotaoMassa()"></td>
-                    <td><span class="badge-local">${d.unidadeDestino || "---"}</span></td>
-                    <td>${d.unidadeOrigem || "---"}</td>
-                    <td>${d.data || "---"}</td>
-                    <td><strong>${d.horario || "---"}</strong></td>
-                    <td>${d.posto || "---"}</td>
-                    <td>${d.nome || "---"}</td>
-                    <td>${d.rg || "---"}</td>
-                    <td class="col-del">
-                        <button class="btn-delete-row" onclick="excluirIndividual('${d.id}', '${d.nome}')">🗑️</button>
-                    </td>
-                </tr>`;
-        });
-        contador.innerText = total;
-    }
-
-    function filtrarTabelaLocal() {
-        const termo = document.getElementById("buscaNome").value.toUpperCase();
-        document.querySelectorAll("#tabela tr").forEach(linha => {
-            const texto = linha.innerText.toUpperCase();
-            linha.style.display = texto.includes(termo) ? "" : "none";
-        });
-    }
-
-    function toggleTodos() {
-        const m = document.getElementById("selecionarTodos");
-        document.querySelectorAll(".checkItem").forEach(cb => cb.checked = m.checked);
-        atualizarBotaoMassa();
-    }
-
-    function atualizarBotaoMassa() {
-        const sel = document.querySelectorAll(".checkItem:checked").length;
-        document.getElementById("numSel").innerText = sel;
-        document.getElementById("btnExcluirMassa").style.display = sel > 0 ? "flex" : "none";
-    }
-
-    async function excluirIndividual(id, nome) {
-        if (confirm(`Excluir agendamento de ${nome}?`)) {
-            await db.collection("agendamentos").doc(id).delete();
-            carregarDados();
-        }
-    }
-
-    async function cancelarSelecionados() {
-        const checks = document.querySelectorAll(".checkItem:checked");
-        if (confirm(`Excluir ${checks.length} registros?`)) {
-            for (let cb of checks) { await db.collection("agendamentos").doc(cb.value).delete(); }
-            carregarDados();
-        }
-    }
-
-    function exportarExcel() {
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(dadosLocais);
-        XLSX.utils.book_append_sheet(wb, ws, "Agendamentos");
-        XLSX.writeFile(wb, "Relatorio_Odonto_CBAX.xlsx");
-    }
-
-    window.onload = carregarDados;
+    }).catch((error) => {
+        document.getElementById("status").innerHTML = "Erro de acesso: " + error.message;
+        console.error(error);
+    });
 </script>
+
 </body>
 </html>
