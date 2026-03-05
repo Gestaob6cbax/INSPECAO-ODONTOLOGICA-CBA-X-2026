@@ -10,15 +10,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { 
-            --cba-blue: #0a2c6d; 
-            --cba-gold: #b8860b; 
-            --cba-light-blue: #e7f0ff;
-        }
-
+        :root { --cba-blue: #0a2c6d; --cba-gold: #b8860b; --cba-light: #e7f0ff; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f9; margin: 0; }
         
-        /* Cabeçalho Azul e Dourado */
         header { 
             background: var(--cba-blue); 
             color: white; 
@@ -28,11 +22,9 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         header h1 { margin: 0; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
-        header p { margin: 10px 0 0; opacity: 0.9; font-weight: 300; }
 
         .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
 
-        /* Cards de Estatística Estilizados */
         .stats-row { display: flex; gap: 20px; margin-bottom: 25px; }
         .card { 
             background: white; 
@@ -46,7 +38,6 @@
         .card span { display: block; color: #888; text-transform: uppercase; font-size: 11px; font-weight: bold; margin-bottom: 8px; }
         .card strong { font-size: 30px; color: var(--cba-blue); }
 
-        /* Barra de Ferramentas */
         .toolbar { 
             background: white; 
             padding: 15px 20px; 
@@ -57,64 +48,40 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
-        .search-box { 
-            width: 60%; 
-            padding: 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 14px; 
-            outline: none;
-        }
-        .btn-excel { 
-            background: #28a745; 
-            color: white; 
-            border: none; 
-            padding: 12px 25px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .search-box { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .btn-excel { background: #28a745; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* Tabela Estilo Foto 2 (Azul) */
         .table-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; }
         th { background: #fcfcfc; color: #888; font-size: 11px; text-transform: uppercase; padding: 15px; text-align: left; border-bottom: 2px solid #f0f0f0; }
         td { padding: 15px; font-size: 14px; border-bottom: 1px solid #f9f9f9; color: #444; }
         tr:hover { background: #f0f5ff; }
 
-        .badge-local { background: var(--cba-light-blue); color: var(--cba-blue); padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #d0e1ff; }
-        .militar-nome { font-weight: bold; color: #222; }
+        .badge-local { background: var(--cba-light); color: var(--cba-blue); padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
     <h1>Gestão de Agendamento Odontológico - 2026</h1>
-    <p>Comando de Bombeiros de Área - CBA X (Salvamento Marítimo)</p>
+    <p>CBA X - Salvamento Marítimo</p>
 </header>
 
 <div class="container">
     <div class="stats-row">
         <div class="card">
-            <span>Total de Militares Agendados</span>
+            <span>Militares Agendados</span>
             <strong id="total-count">0</strong>
         </div>
         <div class="card">
-            <span>Situação da Base</span>
-            <strong style="color: #28a745; font-size: 18px;">✅ ATUALIZADO</strong>
-        </div>
-        <div class="card">
-            <span>Sistema</span>
-            <strong style="font-size: 18px;">GitHub & Firebase</strong>
+            <span>Status</span>
+            <strong id="status-txt" style="color: #28a745; font-size: 18px;">CONECTADO</strong>
         </div>
     </div>
 
     <div class="toolbar">
-        <input type="text" id="buscaNome" class="search-box" placeholder="Pesquisar por Nome, RG ou Local..." onkeyup="filtrarTabela()">
-        <button class="btn-excel" onclick="exportarExcel()">📊 Exportar Planilha</button>
+        <input type="text" id="buscaNome" class="search-box" placeholder="Pesquisar militar..." onkeyup="filtrarTabela()">
+        <button class="btn-excel" onclick="exportarExcel()">📊 Exportar Excel</button>
     </div>
 
     <div class="table-container">
@@ -122,10 +89,10 @@
             <thead>
                 <tr>
                     <th>Local Destino</th>
-                    <th>Unidade Origem</th>
-                    <th>Data / Hora</th>
+                    <th>Origem</th>
+                    <th>Data/Hora</th>
                     <th>Posto/Grad</th>
-                    <th>Nome Completo</th>
+                    <th>Nome</th>
                     <th>RG</th>
                 </tr>
             </thead>
@@ -136,7 +103,6 @@
 </div>
 
 <script>
-    // Sua Configuração Firebase (Correta)
     const firebaseConfig = {
         apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
         authDomain: "agendamento-odonto-cbax.firebaseapp.com",
@@ -149,50 +115,49 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function carregarDados() {
+    // ESSA PARTE ABAIXO É A QUE PUXA OS DADOS DE VERDADE
+    db.collection("agendamentos").onSnapshot((snapshot) => {
         const tabela = document.getElementById("tabela-dados");
-        const totalTxt = document.getElementById("total-count");
+        document.getElementById("total-count").innerText = snapshot.size;
+        tabela.innerHTML = "";
 
-        // "agendamentos" em minúsculo conforme confirmado
-        db.collection("agendamentos").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
-            tabela.innerHTML = "";
-            totalTxt.innerText = snapshot.size;
+        if (snapshot.empty) {
+            tabela.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px;'>Nenhum dado encontrado no banco.</td></tr>";
+        }
 
-            snapshot.forEach((doc) => {
-                const d = doc.data();
-                
-                // Mapeia os campos unidadeDestino e unidadeOrigem salvos pelo index.html
-                const local = d.unidadeDestino || "---";
-                const origem = d.unidadeOrigem || "---";
-                
-                tabela.innerHTML += `
-                    <tr>
-                        <td><span class="badge-local">${local}</span></td>
-                        <td>${origem}</td>
-                        <td>${d.data || ''} às <b>${d.horario || ''}</b></td>
-                        <td>${d.posto || '---'}</td>
-                        <td class="militar-nome">${d.nome || '---'}</td>
-                        <td>${d.rg || '---'}</td>
-                    </tr>
-                `;
-            });
+        snapshot.forEach((doc) => {
+            const d = doc.data();
+            // Aqui eu forço o código a aceitar qualquer nome de campo (unidadeDestino, local, ou unidade)
+            const localDestino = d.unidadeDestino || d.local || d.unidade || "---";
+            const localOrigem = d.unidadeOrigem || d.origem || "---";
+
+            tabela.innerHTML += `
+                <tr>
+                    <td><span class="badge-local">${localDestino}</span></td>
+                    <td>${localOrigem}</td>
+                    <td>${d.data || ''} - ${d.horario || ''}</td>
+                    <td>${d.posto || ''}</td>
+                    <td style="font-weight:bold;">${d.nome || ''}</td>
+                    <td>${d.rg || ''}</td>
+                </tr>
+            `;
         });
-    }
+    }, (error) => {
+        document.getElementById("status-txt").innerText = "ERRO DE CONEXÃO";
+        document.getElementById("status-txt").style.color = "red";
+    });
 
     function filtrarTabela() {
         const termo = document.getElementById("buscaNome").value.toUpperCase();
-        const linhas = document.querySelectorAll("#tabela-dados tr");
-        linhas.forEach(linha => {
+        document.querySelectorAll("#tabela-dados tr").forEach(linha => {
             linha.style.display = linha.innerText.toUpperCase().includes(termo) ? "" : "none";
         });
     }
 
     function exportarExcel() {
         const wb = XLSX.utils.table_to_book(document.querySelector("table"));
-        XLSX.writeFile(wb, "Relatorio_Odontologia_CBAX.xlsx");
+        XLSX.writeFile(wb, "Relatorio_CBAX_Odonto.xlsx");
     }
-
-    window.onload = carregarDados;
 </script>
 </body>
 </html>
