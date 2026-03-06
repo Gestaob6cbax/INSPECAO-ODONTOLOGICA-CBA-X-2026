@@ -96,21 +96,26 @@
         badge.style.display = "block";
         badge.innerText = "🔍 VERIFICANDO AGENDA...";
 
-        const snapshot = await db.collection("agendamentos")
-            .where("unidadeDestino", "==", local)
-            .where("data", "==", dataSel)
-            .get();
+        try {
+            const snapshot = await db.collection("agendamentos")
+                .where("unidadeDestino", "==", local)
+                .where("data", "==", dataSel)
+                .get();
 
-        const restam = 12 - snapshot.size; // Ajustei para 12 vagas, comum em odonto, mas você pode mudar.
+            const restam = 12 - snapshot.size;
 
-        if (restam <= 0) {
-            badge.innerText = "❌ AGENDA LOTADA";
-            badge.className = "vagas-badge vagas-esgotado";
-            document.getElementById("btnSalvar").disabled = true;
-        } else {
-            badge.innerText = `✅ ${restam} VAGAS DISPONÍVEIS`;
-            badge.className = "vagas-badge vagas-ok";
-            document.getElementById("btnSalvar").disabled = false;
+            if (restam <= 0) {
+                badge.innerText = "❌ AGENDA LOTADA";
+                badge.className = "vagas-badge vagas-esgotado";
+                document.getElementById("btnSalvar").disabled = true;
+            } else {
+                badge.innerText = `✅ ${restam} VAGAS DISPONÍVEIS`;
+                badge.className = "vagas-badge vagas-ok";
+                document.getElementById("btnSalvar").disabled = false;
+            }
+        } catch (e) {
+            badge.innerText = "⚠️ ERRO AO CARREGAR VAGAS";
+            console.error(e);
         }
     }
 
@@ -127,7 +132,7 @@
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        if (Object.values(d).some(v => !v)) return alert("Preencha todos os campos corretamente.");
+        if (Object.values(d).some(v => !v)) return alert("Preencha todos os campos, incluindo telefone e e-mail.");
 
         try {
             const check = await db.collection("agendamentos").where("rg", "==", d.rg).get();
@@ -137,7 +142,7 @@
             alert("Agendamento Odontológico realizado com sucesso!");
             location.reload();
         } catch (e) { 
-            alert("Erro ao salvar. Verifique se o banco está em 'Modo de Teste'."); 
+            alert("Erro ao salvar. Verifique se o Firestore está em 'Modo de Teste'."); 
         }
     }
 </script>
