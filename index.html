@@ -18,11 +18,9 @@
         .section-title { background: var(--cba-blue); color: white; padding: 8px 15px; font-size: 0.75rem; font-weight: bold; border-radius: 5px; margin-top: 25px; text-transform: uppercase; text-align: center; }
         label { display: block; margin-top: 15px; font-weight: 700; color: #333; font-size: 0.75rem; text-transform: uppercase; }
         input, select { width: 100%; padding: 14px; margin-top: 6px; border: 2px solid #dfe4ea; border-radius: 10px; box-sizing: border-box; font-size: 16px; background-color: #fcfcfc; }
-        
         .vagas-badge { margin-top: 10px; padding: 12px; border-radius: 10px; text-align: center; font-size: 0.9rem; font-weight: bold; display: none; border: 1px solid; }
         .vagas-ok { background: #e3f2fd; color: #0d47a1; border-color: #bbdefb; }
         .vagas-esgotado { background: #ffebee; color: #b71c1c; border-color: #ffcdd2; }
-
         .btn-confirmar { background: linear-gradient(135deg, var(--cba-blue) 0%, #061a41 100%); color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 30px; font-size: 1.1rem; text-transform: uppercase; border-bottom: 3px solid var(--cba-gold); }
     </style>
 </head>
@@ -50,26 +48,20 @@
 
         <div class="section-title">Local e Data</div>
         <label>Unidade de Atendimento</label>
-        <select id="unidadeDestino" onchange="atualizarVagas()">
+        <select id="unidadeDestino" onchange="configurarDatas()">
             <option value="">Selecione o GMAR...</option>
             <option value="1GMAR">1º GMAR - BOTAFOGO</option>
-            <option value="CER/2ºGMAR">CER/2º GMAR - BARRA</option>
+            <option value="2GMAR">2º GMAR - BARRA</option>
             <option value="3GMAR">3º GMAR - COPACABANA</option>
             <option value="4GMAR">4º GMAR - ITAIPU</option>
         </select>
 
         <label>Data da Consulta</label>
         <select id="data" onchange="atualizarVagas()">
-            <option value="">Selecione a data...</option>
-            <option>10/03/2026</option>
-            <option>17/03/2026</option>
-            <option>18/03/2026</option>
-            <option>10/04/2026</option>
-            <option>28/04/2026</option>
+            <option value="">Selecione o GMAR primeiro...</option>
         </select>
 
         <div id="statusVagas" class="vagas-badge"></div>
-
         <button id="btnSalvar" class="btn-confirmar" onclick="salvar()">Confirmar Agendamento</button>
     </div>
 </div>
@@ -86,36 +78,49 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    const escalaOdonto = {
+        "1GMAR": { vagas: 14, datas: ["11/03/2026","18/03/2026","25/03/2026","01/04/2026","08/04/2026","06/05/2026","13/05/2026","20/05/2026","27/05/2026","03/06/2026","10/06/2026","17/06/2026","24/06/2026","01/07/2026","08/07/2026","15/07/2026","22/07/2026","29/07/2026"] },
+        "2GMAR": { vagas: 21, datas: ["10/03/2026","17/03/2026","24/03/2026","31/03/2026","28/04/2026","05/05/2026","12/05/2026","19/05/2026","26/05/2026","02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026","07/07/2026","14/07/2026","21/07/2026","28/07/2026"] },
+        "3GMAR": { vagas: 11, datas: ["10/03/2026","17/03/2026","24/03/2026","31/03/2026","07/04/2026","14/04/2026","28/04/2026","05/05/2026","12/05/2026","19/05/2026","26/05/2026","02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026","07/07/2026","14/07/2026","21/07/2026","28/07/2026"] },
+        "4GMAR": { vagas: 13, datas: ["10/04/2026","17/04/2026","08/05/2026","15/05/2026","22/05/2026","29/05/2026","05/06/2026","12/06/2026","19/06/2026","26/06/2026","03/07/2026","10/07/2026","17/07/2026","24/07/2026","31/07/2026"] }
+    };
+
+    function configurarDatas() {
+        const local = document.getElementById("unidadeDestino").value;
+        const dataSelect = document.getElementById("data");
+        dataSelect.innerHTML = '<option value="">Selecione a data...</option>';
+        if (local && escalaOdonto[local]) {
+            escalaOdonto[local].datas.forEach(d => {
+                let opt = document.createElement("option");
+                opt.value = d; opt.innerText = d;
+                dataSelect.appendChild(opt);
+            });
+        }
+        document.getElementById("statusVagas").style.display = "none";
+    }
+
     async function atualizarVagas() {
         const local = document.getElementById("unidadeDestino").value;
         const dataSel = document.getElementById("data").value;
         const badge = document.getElementById("statusVagas");
-
         if (!local || !dataSel) return;
+        badge.style.display = "block"; badge.innerText = "🔍 CONSULTANDO...";
 
-        badge.style.display = "block";
-        badge.innerText = "🔍 VERIFICANDO AGENDA...";
+        const snapshot = await db.collection("agendamentos")
+            .where("unidadeDestino", "==", local)
+            .where("data", "==", dataSel).get();
 
-        try {
-            const snapshot = await db.collection("agendamentos")
-                .where("unidadeDestino", "==", local)
-                .where("data", "==", dataSel)
-                .get();
+        const limite = escalaOdonto[local].vagas;
+        const restam = limite - snapshot.size;
 
-            const restam = 12 - snapshot.size;
-
-            if (restam <= 0) {
-                badge.innerText = "❌ AGENDA LOTADA";
-                badge.className = "vagas-badge vagas-esgotado";
-                document.getElementById("btnSalvar").disabled = true;
-            } else {
-                badge.innerText = `✅ ${restam} VAGAS DISPONÍVEIS`;
-                badge.className = "vagas-badge vagas-ok";
-                document.getElementById("btnSalvar").disabled = false;
-            }
-        } catch (e) {
-            badge.innerText = "⚠️ ERRO AO CARREGAR VAGAS";
-            console.error(e);
+        if (restam <= 0) {
+            badge.innerText = "❌ AGENDA LOTADA";
+            badge.className = "vagas-badge vagas-esgotado";
+            document.getElementById("btnSalvar").disabled = true;
+        } else {
+            badge.innerText = `✅ ${restam} VAGAS DISPONÍVEIS`;
+            badge.className = "vagas-badge vagas-ok";
+            document.getElementById("btnSalvar").disabled = false;
         }
     }
 
@@ -128,22 +133,15 @@
             email: document.getElementById("email").value.trim().toLowerCase(),
             unidadeDestino: document.getElementById("unidadeDestino").value,
             data: document.getElementById("data").value,
-            tipo: "ODONTOLOGIA",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
-
-        if (Object.values(d).some(v => !v)) return alert("Preencha todos os campos, incluindo telefone e e-mail.");
-
+        if (Object.values(d).some(v => !v)) return alert("Preencha todos os campos!");
         try {
             const check = await db.collection("agendamentos").where("rg", "==", d.rg).get();
-            if (!check.empty) return alert("Já existe um agendamento para este RG!");
-
+            if (!check.empty) return alert("RG já agendado!");
             await db.collection("agendamentos").add(d);
-            alert("Agendamento Odontológico realizado com sucesso!");
-            location.reload();
-        } catch (e) { 
-            alert("Erro ao salvar. Verifique se o Firestore está em 'Modo de Teste'."); 
-        }
+            alert("Agendamento Odontológico confirmado!"); location.reload();
+        } catch (e) { alert("Erro ao salvar."); }
     }
 </script>
 </body>
