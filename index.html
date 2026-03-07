@@ -59,10 +59,10 @@
         </select>
 
         <label>Unidade de Origem (Onde serve)</label>
-    <select id="unidadeServe">
-        <option value="">Onde você está lotado?</option>
-        <option>CBA X</option><option>1º GMAR</option><option>2º GMAR</option><option>3º GMAR</option><option>4º GMAR</option><option>DBM 1/M (PAQUETÁ)</option><option>DBM 2/M (PISAN)</option><option>DBM 3/M (RECREIO)</option><option>DBM 4/M (GUARATIBA)</option><option>DBM 5/M (SEPETIBA)</option><option>DBM 6/M (ITAIPU)</option>
-    </select>
+        <select id="unidadeServe">
+            <option value="">Onde você está lotado?</option>
+            <option>CBA X</option><option>1º GMAR</option><option>2º GMAR</option><option>3º GMAR</option><option>4º GMAR</option><option>DBM 1/M (PAQUETÁ)</option><option>DBM 2/M (PISAN)</option><option>DBM 3/M (RECREIO)</option><option>DBM 4/M (GUARATIBA)</option><option>DBM 5/M (SEPETIBA)</option><option>DBM 6/M (ITAIPU)</option>
+        </select>
 
         <label>Nome Completo</label>
         <input type="text" id="nome" placeholder="NOME SEM ABREVIAÇÕES" oninput="this.value = this.value.toUpperCase()">
@@ -77,9 +77,9 @@
         <input type="tel" id="telefone" placeholder="(XX) 9XXXX-XXXX">
 
         <div class="section-title">Local e Data</div>
-        <select id="unidadeDestino" onchange="configurarDatas()">
+        
         <label>Local de Destino (Onde fará a inspeção)</label>
-       
+        <select id="unidadeDestino" onchange="configurarDatas()">
             <option value="">Escolha para onde deseja ir...</option>
             <option value="1GMAR">1º GMAR - BOTAFOGO</option>
             <option value="GBS">GBS - BARRA DA TIJUCA</option>
@@ -88,7 +88,7 @@
         </select>
 
         <label>Data</label>
-        <select id="unidadeDestino" onchange="configurarDatas()">
+        <select id="data" onchange="atualizarVagas()">
             <option value="">Selecione a unidade primeiro...</option>
         </select>
 
@@ -123,7 +123,7 @@
 
   const escalaOdonto = {
         "1GMAR": { vagas: 14, datas: ["11/03/2026","18/03/2026","25/03/2026","01/04/2026","08/04/2026","06/05/2026","13/05/2026","20/05/2026","27/05/2026","03/06/2026","10/06/2026","17/06/2026","24/06/2026","01/07/2026","08/07/2026","15/07/2026","22/07/2026","29/07/2026"] },
-        "2GMAR": { vagas: 21, datas: ["10/03/2026","17/03/2026","24/03/2026","31/03/2026","28/04/2026","05/05/2026","12/05/2026","19/05/2026","26/05/2026","02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026","07/07/2026","14/07/2026","21/07/2026","28/07/2026"] },
+        "GBS": { vagas: 21, datas: ["10/03/2026","17/03/2026","24/03/2026","31/03/2026","28/04/2026","05/05/2026","12/05/2026","19/05/2026","26/05/2026","02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026","07/07/2026","14/07/2026","21/07/2026","28/07/2026"] },
         "3GMAR": { vagas: 11, datas: ["10/03/2026","17/03/2026","24/03/2026","31/03/2026","07/04/2026","14/04/2026","28/04/2026","05/05/2026","12/05/2026","19/05/2026","26/05/2026","02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026","07/07/2026","14/07/2026","21/07/2026","28/07/2026"] },
         "4GMAR": { vagas: 13, datas: ["10/04/2026","17/04/2026","08/05/2026","15/05/2026","22/05/2026","29/05/2026","05/06/2026","12/06/2026","19/06/2026","26/06/2026","03/07/2026","10/07/2026","17/07/2026","24/07/2026","31/07/2026"] }
     };
@@ -165,7 +165,7 @@
             posto: document.getElementById("posto").value,
             nome: document.getElementById("nome").value.trim(),
             rg: document.getElementById("rg").value.trim(),
-            unidadeOrigem: document.getElementById("unidadeOrigem").value.trim(),
+            unidadeOrigem: document.getElementById("unidadeServe").value.trim(), 
             email: document.getElementById("email").value.trim(),
             telefone: document.getElementById("telefone").value.trim(),
             unidadeID: document.getElementById("unidadeDestino").value,
