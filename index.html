@@ -77,12 +77,12 @@
         <input type="tel" id="telefone" placeholder="(XX) 9XXXX-XXXX">
 
         <div class="section-title">Local e Data</div>
-        
+        <select id="unidadeDestino" onchange="configurarDatas()">
         <label>Local de Destino (Onde fará a inspeção)</label>
-        <select id="unidadeDestino" onchange="atualizarDatas()">
+       
             <option value="">Escolha para onde deseja ir...</option>
             <option value="1GMAR">1º GMAR - BOTAFOGO</option>
-            <option value="GBS">GBS-BARRA DA TIJUCA</option>
+            <option value="GBS">GBS - BARRA DA TIJUCA</option>
             <option value="3GMAR">3º GMAR - COPACABANA</option>
             <option value="4GMAR">4º GMAR - ITAIPU (CEPO)</option>
         </select>
