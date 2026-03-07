@@ -6,60 +6,107 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
-        :root { --odonto-cyan: #00838f; --cba-blue: #0a2c6d; }
+        :root { --odonto-cyan: #00838f; --cba-blue: #0a2c6d; --cba-red: #b71c1c; }
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        header { background: var(--odonto-cyan); color: white; padding: 15px; text-align: center; border-radius: 10px; border-bottom: 5px solid var(--cba-blue); margin-bottom: 20px; }
-        header img { width: 60px; vertical-align: middle; margin-right: 15px; }
-        .controls { background: white; padding: 15px; border-radius: 10px; display: flex; gap: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input#lupa { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; }
+        
+        /* CABEÇALHO REORGANIZADO */
+        header { 
+            background: var(--odonto-cyan); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            border-bottom: 5px solid var(--cba-blue); 
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between; /* Empurra os itens para as pontas */
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        
+        /* CAIXINHA DO CONTADOR */
+        .contador-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            text-align: center;
+            min-width: 120px;
+        }
+        .contador-box span { display: block; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
+        .contador-box strong { font-size: 1.6rem; display: block; }
+
+        .header-title h1 { margin: 0; font-size: 1.4rem; }
+        .header-title p { margin: 0; font-size: 0.8rem; font-weight: bold; opacity: 0.9; }
+
+        .header-right img { width: 70px; height: auto; }
+
+        .controls { background: white; padding: 15px; border-radius: 10px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input#lupa { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+        
+        .btn-mass-del { background: var(--cba-red); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; display: none; }
+        .btn-refresh { padding: 12px 20px; cursor: pointer; border-radius: 8px; background: var(--odonto-cyan); color: white; border: none; font-weight: bold; }
+        
         .table-container { background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #666; border-bottom: 2px solid #dee2e6; }
+        th { background: #f8f9fa; padding: 12px; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #dee2e6; color: #666; }
         td { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .btn-del { color: #b71c1c; cursor: pointer; border: 1px solid #ffcdd2; padding: 5px 8px; border-radius: 5px; background: #fff5f5; }
+        
         .import-section { margin-top: 30px; padding: 20px; background: #e0f2f1; border: 2px dashed var(--odonto-cyan); border-radius: 10px; }
-        textarea { width: 100%; height: 80px; margin-top: 10px; border-radius: 8px; padding: 10px; border: 1px solid #ccc; }
-        .btn-import { background: var(--cba-blue); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        textarea { width: 100%; height: 80px; margin-top: 10px; border-radius: 8px; padding: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn-import { background: var(--cba-blue); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://raw.githubusercontent.com/gestaob6cbax/INSPECAO-MEDICA-CBA-X-2026/main/logo_cba_x.png" alt="CBA X">
-    <div style="display:inline-block; vertical-align:middle;">
-        <h1 style="margin:0; font-size: 1.5rem;">Painel ADM - Odontologia 2026</h1>
-        <span style="font-weight:bold; font-size: 0.8rem;">CONTROLE DE ESCALA E VAGAS</span>
+    <div class="header-left">
+        <div class="contador-box">
+            <span>Agendados</span>
+            <strong id="contadorTotal">0</strong>
+        </div>
+        <div class="header-title">
+            <h1>Painel ADM Odonto</h1>
+            <p>CBA X - JUNTA DE SAÚDE 2026</p>
+        </div>
+    </div>
+
+    <div class="header-right">
+        <img src="https://raw.githubusercontent.com/gestaob6cbax/INSPECAO-MEDICA-CBA-X-2026/main/logo_cba_x.png" alt="Logo CBA X">
     </div>
 </header>
 
 <div class="controls">
-    <input type="text" id="lupa" placeholder="🔍 Pesquisar por Nome, RG ou Unidade..." onkeyup="filtrar()">
-    <button onclick="carregarDados()" style="padding:0 20px; cursor:pointer; border-radius:8px; background:var(--odonto-cyan); color:white; border:none; font-weight:bold;">🔄 Atualizar</button>
+    <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" title="Selecionar Todos">
+    <input type="text" id="lupa" placeholder="🔍 Filtrar por Nome, RG, Unidade ou Local..." onkeyup="filtrar()">
+    <button id="btnExcluirMassa" class="btn-mass-del" onclick="excluirSelecionados()">🗑️ Excluir Selecionados</button>
+    <button class="btn-refresh" onclick="carregarDados()">🔄 Atualizar</button>
 </div>
 
 <div class="table-container">
     <table>
         <thead>
             <tr>
+                <th width="40">Sel.</th>
                 <th>Data</th>
                 <th>Turno</th>
                 <th>Local Inspeção</th>
                 <th>Militar (Origem)</th>
                 <th>RG</th>
-                <th style="text-align:center;">Ações</th>
             </tr>
         </thead>
         <tbody id="tabelaDados">
-            <tr><td colspan="6" style="text-align:center; padding:20px;">Carregando dados...</td></tr>
+            <tr><td colspan="6" style="text-align:center; padding:30px;">Carregando registros...</td></tr>
         </tbody>
     </table>
 </div>
 
 <div class="import-section">
-    <h3>📥 Sincronizar Planilha do Excel</h3>
-    <p style="font-size: 11px;">Ordem: <b>Local Inspeção | Unidade | Data | Turno | Nome | Posto | RG</b></p>
+    <h3>📥 Importar do Excel</h3>
+    <p style="font-size: 11px;">Ordem: Local | Unidade | Data | Turno | Nome | Posto | RG</p>
     <textarea id="textoExcel" placeholder="Cole os dados aqui..."></textarea>
-    <button class="btn-import" onclick="importarExcel()">🚀 Sincronizar Vagas</button>
+    <button class="btn-import" onclick="importarExcel()">Sincronizar Banco</button>
 </div>
 
 <script>
@@ -77,70 +124,86 @@
 
     async function carregarDados() {
         const corpo = document.getElementById("tabelaDados");
+        const contador = document.getElementById("contadorTotal");
+        corpo.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:30px;'>🔄 Atualizando...</td></tr>";
+        
         try {
             const snap = await db.collection("agendamentos_odonto").get();
             let lista = [];
             snap.forEach(doc => lista.push({id: doc.id, ...doc.data()}));
-            
-            // Ordenar por data
+
             lista.sort((a,b) => a.data.split('/').reverse().join('').localeCompare(b.data.split('/').reverse().join('')));
 
             let html = "";
             lista.forEach(d => {
                 html += `<tr>
+                    <td style="text-align:center;"><input type="checkbox" class="row-check" value="${d.id}" onclick="showMassDelBtn()"></td>
                     <td><b>${d.data}</b></td>
                     <td>${d.turno}</td>
                     <td><small>${d.localAtendimento}</small></td>
-                    <td>${d.posto || ""} ${d.nome}<br><small style="color:blue">${d.unidadeOrigem || "N/A"}</small></td>
+                    <td>${d.posto} ${d.nome}<br><small style="color:blue">${d.unidadeOrigem}</small></td>
                     <td><code>${d.rg}</code></td>
-                    <td style="text-align:center;">
-                        <button class="btn-del" onclick="excluirRegistro('${d.id}')">🗑️</button>
-                    </td>
                 </tr>`;
             });
-            corpo.innerHTML = html || "<tr><td colspan='6' style='text-align:center;'>Nenhum dado encontrado.</td></tr>";
-        } catch (e) { corpo.innerHTML = "<tr><td colspan='6'>Erro de conexão.</td></tr>"; }
-    }
 
-    async function importarExcel() {
-        const raw = document.getElementById("textoExcel").value;
-        if(!raw.trim()) return alert("Cole os dados primeiro!");
-        const linhas = raw.split('\n');
-        let count = 0;
-
-        for(let l of linhas) {
-            const c = l.split('\t');
-            if(c.length >= 7) { 
-                await db.collection("agendamentos_odonto").add({
-                    localAtendimento: c[0]?.trim(), // Local (GBS, 1º GMAR, etc)
-                    unidadeOrigem: c[1]?.trim(),    // Unidade do Militar (Sepetiba, CBA X, etc)
-                    data: c[2]?.trim(),             // Data
-                    turno: c[3]?.trim(),            // Turno (Manhã ou Tarde)
-                    nome: c[4]?.trim().toUpperCase(),
-                    posto: c[5]?.trim().toUpperCase(),
-                    rg: c[6]?.trim(),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                count++;
-            }
+            corpo.innerHTML = html || "<tr><td colspan='6' style='text-align:center;'>Nenhum militar agendado.</td></tr>";
+            contador.innerText = lista.length;
+            showMassDelBtn();
+            document.getElementById("selectAll").checked = false;
+        } catch (e) {
+            corpo.innerHTML = "<tr><td colspan='6' style='color:red;'>Erro de conexão.</td></tr>";
         }
-        alert(count + " militares sincronizados!");
-        carregarDados();
-        document.getElementById("textoExcel").value = "";
     }
 
     function filtrar() {
         const busca = document.getElementById("lupa").value.toUpperCase();
-        const rows = document.querySelectorAll("#tabelaDados tr");
-        rows.forEach(r => r.style.display = r.innerText.toUpperCase().includes(busca) ? "" : "none");
+        document.querySelectorAll("#tabelaDados tr").forEach(r => {
+            r.style.display = r.innerText.toUpperCase().includes(busca) ? "" : "none";
+        });
     }
 
-    async function excluirRegistro(id) {
-        if(confirm("Liberar vaga deste militar?")) {
-            await db.collection("agendamentos_odonto").doc(id).delete();
-            carregarDados();
-        }
+    function toggleSelectAll() {
+        const master = document.getElementById("selectAll").checked;
+        document.querySelectorAll(".row-check").forEach(c => {
+            if(c.closest('tr').style.display !== "none") c.checked = master;
+        });
+        showMassDelBtn();
     }
+
+    function showMassDelBtn() {
+        const qtd = document.querySelectorAll(".row-check:checked").length;
+        const btn = document.getElementById("btnExcluirMassa");
+        btn.style.display = qtd > 0 ? "inline-block" : "none";
+        btn.innerText = `🗑️ Excluir ${qtd}`;
+    }
+
+    async function excluirSelecionados() {
+        if(!confirm("Excluir selecionados?")) return;
+        const checks = document.querySelectorAll(".row-check:checked");
+        for(let c of checks) {
+            await db.collection("agendamentos_odonto").doc(c.value).delete();
+        }
+        carregarDados();
+    }
+
+    async function importarExcel() {
+        const raw = document.getElementById("textoExcel").value;
+        const linhas = raw.split('\n');
+        for(let l of linhas) {
+            const c = l.split('\t');
+            if(c.length >= 7) {
+                await db.collection("agendamentos_odonto").add({
+                    localAtendimento: c[0]?.trim(), unidadeOrigem: c[1]?.trim(),
+                    data: c[2]?.trim(), turno: c[3]?.trim(),
+                    nome: c[4]?.trim().toUpperCase(), posto: c[5]?.trim().toUpperCase(),
+                    rg: c[6]?.trim(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }
+        document.getElementById("textoExcel").value = "";
+        carregarDados();
+    }
+
     window.onload = carregarDados;
 </script>
 </body>
