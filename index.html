@@ -64,9 +64,12 @@
         <label>RG Militar</label>
         <input type="number" id="rg" placeholder="DIGITE SEU RG">
 
-        <label>Unidade em que serve (Lotação)</label>
-        <input type="text" id="unidadeOrigem" placeholder="EX: 1º GMAR, CBA X, DBM..." oninput="this.value = this.value.toUpperCase()">
-
+        <label>Unidade de Origem (Onde serve)</label>
+    <select id="unidadeServe">
+        <option value="">Onde você está lotado?</option>
+        <option>CBA X</option><option>1º GMAR</option><option>2º GMAR</option><option>3º GMAR</option><option>4º GMAR</option><option>DBM 1/M (PAQUETÁ)</option><option>DBM 2/M (PISAN)</option><option>DBM 3/M (RECREIO)</option><option>DBM 4/M (GUARATIBA)</option><option>DBM 5/M (SEPETIBA)</option><option>DBM 6/M (ITAIPU)</option>
+    </select>
+        
         <label>E-mail</label>
         <input type="email" id="email" placeholder="exemplo@email.com">
 
