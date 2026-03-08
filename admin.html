@@ -82,4 +82,148 @@
     <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" title="Selecionar Todos">
     <input type="text" id="lupa" placeholder="🔍 Filtrar por Nome, RG, Unidade ou Local..." oninput="filtrar()">
     <button class="btn-refresh" onclick="carregarDados()">🔄 Atualizar</button>
-    <button class="btn-excel" onclick="baixarExcel()">📥 BAIXAR EXCEL</button
+    <button class="btn-excel" onclick="baixarExcel()">📥 BAIXAR EXCEL</button>
+    <button id="btnExcluirMassa" class="btn-mass-del" onclick="excluirSelecionados()">🗑️ Excluir Selecionados</button>
+    <button class="btn-danger-zone" onclick="resetarBancoCompleto()">⚠️ LIMPAR TUDO</button>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th width="30">Sel.</th>
+                <th>Data</th>
+                <th>Turno</th>
+                <th>Local Atendimento</th>
+                <th>Unidade</th>
+                <th>Nome</th>
+                <th>Posto</th>
+                <th>RG</th>
+                <th style="text-align:center;">Ação</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaDados">
+            <tr><td colspan="9" style="text-align:center; padding:30px;">Iniciando sistema...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBkq2D8JFuxzPTI2z_Iirg3rYfSFfPJRXY",
+        authDomain: "inspecao-saude-cbax.firebaseapp.com",
+        projectId: "inspecao-saude-cbax",
+        storageBucket: "inspecao-saude-cbax.firebasestorage.app",
+        messagingSenderId: "1011281662526",
+        appId: "1:1011281662526:web:1028e8a8d140684e98376f"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function carregarDados() {
+        const corpo = document.getElementById("tabelaDados");
+        const contador = document.getElementById("contadorTotal");
+        corpo.innerHTML = "<tr><td colspan='9' style='text-align:center; padding:20px;'>🔄 Sincronizando...</td></tr>";
+        
+        try {
+            const snap = await db.collection("agendamentos_odonto").get();
+            let lista = [];
+            snap.forEach(doc => lista.push({id: doc.id, ...doc.data()}));
+            
+            lista.sort((a,b) => {
+                const dateA = a.data ? a.data.split('/').reverse().join('') : '';
+                const dateB = b.data ? b.data.split('/').reverse().join('') : '';
+                return dateA.localeCompare(dateB);
+            });
+
+            let html = "";
+            lista.forEach(d => {
+                html += `<tr>
+                    <td><input type="checkbox" class="row-check" value="${d.id}" onclick="showMassDelBtn()"></td>
+                    <td><b>${d.data || '-'}</b></td>
+                    <td>${d.turno || '-'}</td>
+                    <td><small>${d.localAtendimento || '-'}</small></td>
+                    <td><small style="color:blue">${d.unidadeOrigem || '-'}</small></td>
+                    <td>${d.nome || '-'}</td>
+                    <td>${d.posto || '-'}</td>
+                    <td><code>${d.rg || '-'}</code></td>
+                    <td style="text-align:center;"><button class="btn-individual-del" onclick="excluirIndividual('${d.id}')">🗑️</button></td>
+                </tr>`;
+            });
+            corpo.innerHTML = html || "<tr><td colspan='9' style='text-align:center;'>Nenhum registro encontrado.</td></tr>";
+            contador.innerText = lista.length;
+            showMassDelBtn();
+            document.getElementById("selectAll").checked = false;
+        } catch (e) {
+            corpo.innerHTML = "<tr><td colspan='9' style='color:red;'>Erro ao carregar dados.</td></tr>";
+        }
+    }
+
+    function filtrar() {
+        const busca = document.getElementById("lupa").value.toUpperCase();
+        document.querySelectorAll("#tabelaDados tr").forEach(r => {
+            r.style.display = r.innerText.toUpperCase().includes(busca) ? "" : "none";
+        });
+    }
+
+    function toggleSelectAll() {
+        const master = document.getElementById("selectAll").checked;
+        document.querySelectorAll(".row-check").forEach(c => {
+            if(c.closest('tr').style.display !== "none") c.checked = master;
+        });
+        showMassDelBtn();
+    }
+
+    function showMassDelBtn() {
+        const qtd = document.querySelectorAll(".row-check:checked").length;
+        document.getElementById("btnExcluirMassa").style.display = qtd > 0 ? "inline-block" : "none";
+        document.getElementById("btnExcluirMassa").innerText = `🗑️ Excluir ${qtd} Selecionados`;
+    }
+
+    async function excluirIndividual(id) {
+        if(confirm("Excluir este agendamento?")) {
+            await db.collection("agendamentos_odonto").doc(id).delete();
+            carregarDados();
+        }
+    }
+
+    async function excluirSelecionados() {
+        if(!confirm("Excluir agendamentos selecionados?")) return;
+        const checks = document.querySelectorAll(".row-check:checked");
+        for(let c of checks) await db.collection("agendamentos_odonto").doc(c.value).delete();
+        carregarDados();
+    }
+
+    async function resetarBancoCompleto() {
+        if(confirm("🚨 EXCLUIR TUDO? Esta ação não pode ser desfeita!")) {
+            const snap = await db.collection("agendamentos_odonto").get();
+            const batch = db.batch();
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert("Banco de dados limpo com sucesso!");
+            carregarDados();
+        }
+    }
+
+    function baixarExcel() {
+        let csv = "Data;Turno;Local;Unidade;Nome;Posto;RG\n";
+        document.querySelectorAll("#tabelaDados tr").forEach(linha => {
+            const cols = linha.querySelectorAll("td");
+            if(cols.length > 1) {
+                let r = [];
+                for(let i=1; i<8; i++) r.push(cols[i].innerText.replace(/;/g, ","));
+                csv += r.join(";") + "\n";
+            }
+        });
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "AGENDAMENTOS_ODONTO_2026.csv");
+        link.click();
+    }
+
+    window.onload = carregarDados;
+</script>
+</body>
+</html>
