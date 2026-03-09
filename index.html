@@ -7,17 +7,17 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         :root {
-            --odonto-main: #009688; /* Verde Água da Odonto */
+            --odonto-main: #009688;
             --cba-blue: #0a2c6d;
             --bg-light: #f1f4f8;
-            --white: #ffffff;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             background-color: var(--bg-light);
             margin: 0;
             display: flex;
@@ -28,7 +28,7 @@
         }
 
         .container {
-            background: var(--white);
+            background: white;
             width: 100%;
             max-width: 550px;
             padding-bottom: 30px;
@@ -38,15 +38,10 @@
             border: 1px solid #ddd;
         }
 
-        header { 
-            text-align: center; 
-            padding: 25px 15px;
-        }
+        header { text-align: center; padding: 25px 15px; }
         header img { width: 75px; margin-bottom: 10px; }
         header h1 { color: var(--cba-blue); font-size: 1.5rem; margin: 0; text-transform: uppercase; }
-        header p { color: #666; font-size: 0.9rem; margin-top: 5px; font-weight: bold; }
 
-        /* Estilo das Faixas de Título (Igual Dermatologia) */
         .block-header {
             background-color: var(--odonto-main);
             color: white;
@@ -55,14 +50,11 @@
             font-weight: bold;
             font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
             margin: 10px 15px;
             border-radius: 8px;
         }
 
-        .form-section {
-            padding: 0 20px;
-        }
+        .form-section { padding: 0 20px; }
 
         label {
             display: block;
@@ -81,15 +73,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1rem;
-            outline: none;
-            transition: 0.3s;
             background-color: #fafafa;
-        }
-
-        input:focus, select:focus { 
-            border-color: var(--odonto-main); 
-            background-color: #fff; 
-            box-shadow: 0 0 5px rgba(0,150,136,0.2); 
         }
 
         button {
@@ -104,10 +88,7 @@
             margin-top: 25px;
             cursor: pointer;
             text-transform: uppercase;
-            transition: 0.3s;
         }
-
-        button:hover { background: #00796b; }
 
         .confirmacao {
             margin: 20px 15px;
@@ -115,20 +96,9 @@
             border-radius: 10px;
             display: none;
             text-align: center;
-            font-weight: bold;
+            background-color: #d4edda;
+            color: #155724;
             border: 1px solid #c3e6cb;
-        }
-
-        .btn-print {
-            background-color: var(--cba-blue);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            margin-top: 15px;
-            width: 100%;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -138,20 +108,17 @@
     <header>
         <img src="logo.png" alt="Logo CBA X">
         <h1>Agendamento Odontológico</h1>
-        <p>CBA X - 6ª Seção (ADM) - Gestão 2026</p>
+        <p>CBA X - 6ª Seção - Gestão 2026</p>
     </header>
 
     <div class="block-header">Bloco 1: Identificação do Militar</div>
     <div class="form-section">
-        <label>Unidade que Serve:</label>
+        <label>Unidade de Origem:</label>
         <select id="unidadeServe">
             <option value="">Selecione...</option>
             <option>CBA X</option><option>CER X</option>
-            <option>1º GMAR (Botafogo)</option><option>2º GMAR (Barra)</option>
-            <option>3º GMAR (Copacabana)</option><option>4º GMAR (Itaipu)</option>
-            <option>DBM 1/M (Paquetá)</option><option>DBM 2/M (Ramos)</option>
-            <option>DBM 3/M (Recreio)</option><option>DBM 4/M (Guaratiba)</option>
-            <option>DBM 5/M (Sepetiba)</option><option>DBM 6/M (Itaipu)</option>
+            <option>1º GMAR</option><option>2º GMAR</option>
+            <option>3º GMAR</option><option>4º GMAR</option>
         </select>
 
         <label>Posto/Graduação:</label>
@@ -164,37 +131,37 @@
         </select>
 
         <label>Nome Completo:</label>
-        <input type="text" id="nome" placeholder="Digite seu nome">
+        <input type="text" id="nome" placeholder="NOME COMPLETO">
 
         <label>RG Militar:</label>
         <input type="number" id="rg" placeholder="Somente números">
 
-        <label>Telefone/WhatsApp:</label>
+        <label>WhatsApp:</label>
         <input type="text" id="telefone" placeholder="(XX) 9XXXX-XXXX">
 
         <label>Email:</label>
         <input type="email" id="email" placeholder="militar@exemplo.com">
     </div>
 
-    <div class="block-header">Bloco 2: Dados do Agendamento</div>
+    <div class="block-header">Bloco 2: Dados da Consulta</div>
     <div class="form-section">
         <label>Polo de Atendimento:</label>
-        <select id="unidade">
+        <select id="unidade" onchange="carregarDatas()">
             <option value="">Selecione o Polo...</option>
-            <option value="1º GMAR - BOTAFOGO">1º GMAR - BOTAFOGO</option>
-            <option value="2º GMAR - BARRA (GBS)">2º GMAR - BARRA (GBS)</option>
-            <option value="3º GMAR - COPACABANA">3º GMAR - COPACABANA</option>
-            <option value="CEPO - POL DE CHARITAS (CEPO)">CEPO - NITERÓI</option>
+            <option value="1GMAR">1º GMAR - BOTAFOGO</option>
+            <option value="2GMAR">2º GMAR - BARRA (GBS)</option>
+            <option value="3GMAR">3º GMAR - COPACABANA</option>
+            <option value="4GMAR">4º GMAR - ITAIPU (CEPO)</option>
         </select>
 
-        <label>Data Escolhida:</label>
-        <input type="date" id="data">
+        <label>Data Disponível:</label>
+        <select id="data" onchange="carregarHorarios()">
+            <option value="">Selecione o polo primeiro</option>
+        </select>
 
-        <label>Horário/Turno:</label>
+        <label>Horário:</label>
         <select id="horario">
-            <option value="">Selecione...</option>
-            <option>MANHÃ (08:00 às 12:00)</option>
-            <option>TARDE (13:00 às 17:00)</option>
+            <option value="">Selecione a data primeiro</option>
         </select>
 
         <button onclick="salvar()" id="btnAcao">Confirmar Agendamento</button>
@@ -204,104 +171,152 @@
 </div>
 
 <script>
+    const { jsPDF } = window.jspdf;
+
     const firebaseConfig = {
-        apiKey: "AIzaSyBkq2D8JFuxzPTI2z_Iirg3rYfSFfPJRXY",
+        apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
         authDomain: "agendamento-odonto-cbax.firebaseapp.com",
         projectId: "agendamento-odonto-cbax",
         storageBucket: "agendamento-odonto-cbax.firebasestorage.app",
-        messagingSenderId: "1011281662526",
-        appId: "1:1011281662526:web:1028e8a8d140684e98376f"
+        messagingSenderId: "545212689993",
+        appId: "1:545212689993:web:b4b85a03bb2dcac9739998"
     };
 
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let dadosParaImpressao = null;
+    const datas = {
+        "1GMAR":["11/03/26","18/03/26","25/03/26","01/04/26","08/04/26","06/05/26","13/05/26","20/05/26","27/05/26","03/06/26","10/06/26","17/06/26","24/06/26","01/07/26","08/07/26","15/07/26","22/07/26","29/07/26"],
+        "2GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+        "3GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","07/04/26","14/04/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+        "4GMAR":["10/04/26","17/04/26","08/05/26","15/05/26","22/05/26","29/05/26","05/06/26","12/06/26","19/06/26","26/06/26","03/07/26","10/07/26","17/07/26","24/07/26","31/07/26"]
+    };
 
-    async function salvar() {
-        const btn = document.getElementById("btnAcao");
-        const box = document.getElementById("confirmacaoBox");
+    function gerarHorarios(inicio, quantidade){
+        let lista=[];
+        let hora=new Date("2000-01-01T"+inicio+":00");
+        for(let i=0;i<quantidade;i++){
+            lista.push(hora.toTimeString().slice(0,5));
+            hora.setMinutes(hora.getMinutes()+15);
+        }
+        return lista;
+    }
 
-        const dados = {
-            unidadeServe: document.getElementById("unidadeServe").value,
-            posto: document.getElementById("posto").value,
-            nome: document.getElementById("nome").value.toUpperCase(),
-            rg: document.getElementById("rg").value,
-            telefone: document.getElementById("telefone").value,
-            email: document.getElementById("email").value,
-            poloAtendimento: document.getElementById("unidade").value,
-            data: document.getElementById("data").value,
-            turno: document.getElementById("horario").value,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
+    function carregarDatas(){
+        let unidade=document.getElementById("unidade").value;
+        let selectData=document.getElementById("data");
+        let selectHorario=document.getElementById("horario");
 
-        if (!dados.nome || !dados.rg || !dados.data || !dados.unidadeServe || !dados.poloAtendimento) {
-            alert("Por favor, preencha todos os campos obrigatórios.");
+        selectData.innerHTML="<option value=''>Selecione a data</option>";
+        selectHorario.innerHTML="<option value=''>Selecione a data primeiro</option>";
+        if(!unidade) return;
+
+        datas[unidade].forEach(d=>{
+            let op=document.createElement("option");
+            op.value=d; op.text=d;
+            selectData.appendChild(op);
+        });
+    }
+
+    function carregarHorarios(){
+        let unidade=document.getElementById("unidade").value;
+        let selectHorario=document.getElementById("horario");
+        selectHorario.innerHTML="<option value=''>Selecione o horário</option>";
+        if(!unidade) return;
+
+        let horarios=[];
+        if(unidade==="1GMAR") horarios=gerarHorarios("08:00",14);
+        if(unidade==="2GMAR") horarios=[...gerarHorarios("08:00",14),...gerarHorarios("13:00",7)];
+        if(unidade==="3GMAR") horarios=gerarHorarios("08:00",11);
+        if(unidade==="4GMAR") horarios=gerarHorarios("08:00",13);
+
+        horarios.forEach(h=>{
+            let op=document.createElement("option");
+            op.value=h; op.text=h;
+            selectHorario.appendChild(op);
+        });
+    }
+
+    async function salvar(){
+        let btn = document.getElementById("btnAcao");
+        let rg = document.getElementById("rg").value.trim();
+        let unidade = document.getElementById("unidade").value;
+        let data = document.getElementById("data").value;
+        let horario = document.getElementById("horario").value;
+
+        if(!unidade||!data||!horario||!rg){
+            alert("Preencha Unidade, Data, Horário e RG.");
             return;
         }
 
         btn.disabled = true;
-        btn.innerText = "Processando...";
+        btn.innerText = "Verificando...";
 
         try {
-            await db.collection("agendamentos_odonto").add(dados);
-            dadosParaImpressao = dados;
-            
-            box.style.display = "block";
-            box.style.backgroundColor = "#d4edda";
-            box.style.color = "#155724";
-            box.innerHTML = `
-                <p>✅ Agendamento realizado com sucesso!</p>
-                <button class="btn-print" onclick="imprimirComprovante()">🖨️ Imprimir Comprovante</button>
-            `;
-            
+            // BLOQUEIO POR RG
+            const consultaRG = await db.collection("agendamentos").where("rg","==",rg).get();
+            if(!consultaRG.empty){
+                alert("Já existe um agendamento para este RG.");
+                btn.disabled = false; btn.innerText = "Confirmar Agendamento";
+                return;
+            }
+
+            // BLOQUEIO DE HORÁRIO
+            const consulta = await db.collection("agendamentos")
+                .where("unidade","==",unidade)
+                .where("data","==",data)
+                .where("horario","==",horario)
+                .get();
+
+            if(!consulta.empty){
+                alert("Este horário já foi preenchido!");
+                btn.disabled = false; btn.innerText = "Confirmar Agendamento";
+                return;
+            }
+
+            let dados = {
+                unidadeServe: document.getElementById("unidadeServe").value,
+                posto: document.getElementById("posto").value,
+                nome: document.getElementById("nome").value.toUpperCase(),
+                rg: rg,
+                telefone: document.getElementById("telefone").value,
+                email: document.getElementById("email").value,
+                unidade, data, horario,
+                criadoEm: new Date()
+            };
+
+            await db.collection("agendamentos").add(dados);
+            mostrarConfirmacao(dados);
+            gerarPDF(dados);
             btn.style.display = "none";
+
         } catch (error) {
-            console.error(error);
-            alert("Erro ao salvar. Verifique sua conexão.");
+            alert("Erro: " + error.message);
             btn.disabled = false;
-            btn.innerText = "Confirmar Agendamento";
         }
     }
 
-    function imprimirComprovante() {
-        if(!dadosParaImpressao) return;
-        const dataFormatada = dadosParaImpressao.data.split('-').reverse().join('/');
-        const win = window.open('', '', 'height=700,width=700');
-        
-        win.document.write(`
-            <html>
-            <head>
-                <style>
-                    body { font-family: sans-serif; padding: 40px; text-align: center; }
-                    .box { border: 2px solid #0a2c6d; padding: 20px; border-radius: 12px; text-align: left; background: #f9f9f9; }
-                    .header { text-align: center; border-bottom: 2px solid #0a2c6d; padding-bottom: 10px; margin-bottom: 20px; }
-                    .label { font-weight: bold; color: #555; text-transform: uppercase; font-size: 12px; }
-                    .val { font-size: 16px; font-weight: bold; margin-bottom: 12px; display: block; }
-                </style>
-            </head>
-            <body>
-                <div class="box">
-                    <div class="header">
-                        <strong>COMPROVANTE DE AGENDAMENTO ODONTOLÓGICO</strong><br>
-                        CBA X - 6ª SEÇÃO
-                    </div>
-                    <span class="label">Militar:</span>
-                    <span class="val">\${dadosParaImpressao.posto} \${dadosParaImpressao.nome}</span>
-                    <span class="label">RG:</span>
-                    <span class="val">\${dadosParaImpressao.rg}</span>
-                    <span class="label">Local:</span>
-                    <span class="val">\${dadosParaImpressao.poloAtendimento}</span>
-                    <span class="label">Data/Turno:</span>
-                    <span class="val">\${dataFormatada} - \${dadosParaImpressao.turno}</span>
-                </div>
-            </body>
-            </html>
-        `);
-        win.document.close();
-        setTimeout(() => { win.print(); }, 500);
+    function mostrarConfirmacao(d){
+        let box=document.getElementById("confirmacaoBox");
+        box.style.display="block";
+        box.innerHTML=`
+            <h3>Agendamento Confirmado!</h3>
+            <p><strong>Local:</strong> ${d.unidade} | <strong>Data:</strong> ${d.data} às ${d.horario}</p>
+            <p style="color:red; font-size:0.8rem;">O PDF foi gerado automaticamente.</p>
+        `;
+    }
+
+    function gerarPDF(d){
+        const doc = new jsPDF();
+        doc.text("CBA X - AGENDAMENTO ODONTOLÓGICO 2026", 20, 20);
+        doc.text("---------------------------------------", 20, 30);
+        doc.text("Militar: " + d.posto + " " + d.nome, 20, 40);
+        doc.text("RG: " + d.rg, 20, 50);
+        doc.text("Local: " + d.unidade, 20, 60);
+        doc.text("Data: " + d.data, 20, 70);
+        doc.text("Horário: " + d.horario, 20, 80);
+        doc.save(`Comprovante_${d.rg}.pdf`);
     }
 </script>
-
 </body>
 </html>
