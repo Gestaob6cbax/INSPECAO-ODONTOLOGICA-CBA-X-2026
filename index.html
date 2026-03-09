@@ -1,426 +1,537 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agendamento Odontológico 2026 - CBA X</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento Odontológico 2026 - CBA X</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --odonto-main: #009688;
+            --cba-blue: #0a2c6d;
+            --bg-light: #f1f4f8;
+        }
 
-<style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
 
-:root{
---odonto-main:#009688;
---cba-blue:#0a2c6d;
---bg-light:#f1f4f8;
-}
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 550px;
+            padding-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
 
-body{
-font-family:'Segoe UI',Tahoma,sans-serif;
-background:var(--bg-light);
-margin:0;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
-padding:15px;
-}
+        header { text-align: center; padding: 25px 15px; }
+        header img { width: 75px; margin-bottom: 10px; }
+        header h1 { color: var(--cba-blue); font-size: 1.5rem; margin: 0; text-transform: uppercase; }
 
-.container{
-background:white;
-width:100%;
-max-width:550px;
-border-radius:15px;
-box-shadow:0 8px 25px rgba(0,0,0,0.1);
-overflow:hidden;
-border:1px solid #ddd;
-padding-bottom:30px;
-}
+        .block-header {
+            background-color: var(--odonto-main);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin: 10px 15px;
+            border-radius: 8px;
+        }
 
-header{text-align:center;padding:25px 15px;}
-header img{width:75px;margin-bottom:10px;}
-header h1{color:var(--cba-blue);margin:0;font-size:1.5rem;}
+        .form-section { padding: 0 20px; }
 
-.block-header{
-background:var(--odonto-main);
-color:white;
-padding:12px;
-text-align:center;
-font-weight:bold;
-font-size:0.85rem;
-margin:10px 15px;
-border-radius:8px;
-}
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #444;
+            text-transform: uppercase;
+        }
 
-.form-section{padding:0 20px;}
+        input, select {
+            width: 100%;
+            padding: 11px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: #fafafa;
+        }
 
-label{
-display:block;
-margin-top:15px;
-font-weight:bold;
-font-size:0.8rem;
-color:#444;
-}
+        button#btnAcao {
+            width: 100%;
+            background: var(--odonto-main);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 25px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
 
-input,select{
-width:100%;
-padding:11px;
-margin-top:5px;
-border:1px solid #ccc;
-border-radius:8px;
-box-sizing:border-box;
-background:#fafafa;
-}
+        #contadorVagas {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #f0f9f8;
+            border: 1px solid #b2dfdb;
+            color: #00695c;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: none;
+        }
 
-button#btnAcao{
-width:100%;
-background:var(--odonto-main);
-color:white;
-padding:15px;
-border:none;
-border-radius:8px;
-font-size:1.1rem;
-font-weight:bold;
-margin-top:25px;
-cursor:pointer;
-}
+        #areaComprovante {
+            display: none;
+            width: 100%;
+            max-width: 450px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
 
-</style>
+        .comprovante-card {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-top: 15px solid var(--odonto-main);
+        }
+
+        .comprovante-card img { width: 100px; margin-bottom: 10px; }
+        
+        .titulo-confirmado { color: var(--cba-blue); font-weight: 900; font-size: 1.4rem; margin-bottom: 5px; text-transform: uppercase; }
+        .subtitulo-secao { color: #333; font-size: 1.1rem; margin-bottom: 25px; }
+
+        .caixa-dados {
+            border: 2px dashed var(--odonto-main);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            background-color: #f0f9f8;
+        }
+
+        .nome-militar { color: var(--cba-blue); font-weight: bold; font-size: 1.3rem; margin-bottom: 20px; display: block; text-transform: uppercase; }
+        
+        .info-linha { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 1rem; 
+            margin-bottom: 12px; 
+            text-align: left;
+            color: #333;
+        }
+
+        .btn-pdf {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .link-voltar { color: var(--cba-blue); text-decoration: underline; cursor: pointer; display: block; margin-top: 20px; font-weight: bold; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media print {
+            body { background: white; }
+            .container, .btn-pdf, .link-voltar { display: none !important; }
+            #areaComprovante { display: block !important; margin: 0; max-width: 100%; }
+            .comprovante-card { box-shadow: none; border: 1px solid #eee; }
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="container">
+<div class="container" id="containerForm">
+    <header>
+        <img src="logo.png" alt="Logo CBA X">
+        <h1>Agendamento Odontológico</h1>
+        <p>CBA X - 6ª Seção - Gestão 2026</p>
+    </header>
 
-<header>
-<img src="logo.png">
-<h1>Agendamento Odontológico</h1>
-<p>CBA X - 6ª Seção - Gestão 2026</p>
-</header>
+    <div class="block-header">Bloco 1: Identificação do Militar</div>
+    <div class="form-section">
+       <label>Unidade que Serve:</label>
+        <select id="unidadeServe">
+            <option value="">Selecione...</option>
+            <option>CBA X</option><option>CER X</option>
+            <option>1º GMAR (Botafogo)</option><option>2º GMAR (Barra da Tijuca)</option>
+            <option>3º GMAR (Copacabana)</option><option>4º GMAR (Itaipu)</option>
+            <option>DBM 1/M (Paquetá)</option>
+            <option>DBM 2/M (Piscinão de Ramos)</option>
+            <option>DBM 3/M (Recreio)</option>
+            <option>DBM 4/M (Barra de Guaratiba)</option>
+            <option>DBM 5/M (Sepetiba)</option>
+            <option>DBM 6/M (Itaipu)</option>
+        </select>
 
-<div class="block-header">Bloco 1: Identificação do Militar</div>
+        <label>Posto/Graduação:</label>
+        <select id="posto">
+            <option value="">Selecione...</option>
+            <option>CEL BM</option><option>TC BM</option><option>MAJ BM</option>
+            <option>CAP BM</option><option>1º TEN BM</option><option>2º TEN BM</option>
+            <option>SUBTEN BM</option><option>1º SGT BM</option><option>2º SGT BM</option>
+            <option>3º SGT BM</option><option>CB BM</option><option>SD BM</option>
+        </select>
 
-<div class="form-section">
+        <label>Nome Completo:</label>
+        <input type="text" id="nome" placeholder="NOME COMPLETO" oninput="this.value = this.value.toUpperCase()">
 
-<label>Unidade que Serve:</label>
-<select id="unidadeServe">
-<option value="">Selecione...</option>
-<option>CBA X</option>
-<option>CER X</option>
-<option>1º GMAR (Botafogo)</option>
-<option>2º GMAR (Barra da Tijuca)</option>
-<option>3º GMAR (Copacabana)</option>
-<option>4º GMAR (Itaipu)</option>
-<option>DBM 1/M (Paquetá)</option>
-<option>DBM 2/M (Piscinão de Ramos)</option>
-<option>DBM 3/M (Recreio)</option>
-<option>DBM 4/M (Barra de Guaratiba)</option>
-<option>DBM 5/M (Sepetiba)</option>
-<option>DBM 6/M (Itaipu)</option>
-</select>
+        <label>RG Militar:</label>
+        <input type="number" id="rg" placeholder="Somente números">
 
-<label>Posto/Graduação:</label>
-<select id="posto">
-<option value="">Selecione...</option>
-<option>CEL BM</option>
-<option>TC BM</option>
-<option>MAJ BM</option>
-<option>CAP BM</option>
-<option>1º TEN BM</option>
-<option>2º TEN BM</option>
-<option>SUBTEN BM</option>
-<option>1º SGT BM</option>
-<option>2º SGT BM</option>
-<option>3º SGT BM</option>
-<option>CB BM</option>
-<option>SD BM</option>
-</select>
+        <label>WhatsApp:</label>
+        <input type="text" id="telefone" placeholder="(XX) 9XXXX-XXXX">
 
-<label>Nome Completo:</label>
-<input type="text" id="nome" oninput="this.value=this.value.toUpperCase()">
+        <label>Email:</label>
+        <input type="email" id="email" placeholder="militar@exemplo.com">
+    </div>
 
-<label>RG Militar:</label>
-<input type="number" id="rg">
+    <div class="block-header">Bloco 2: Dados da Consulta</div>
+    <div class="form-section">
+        <label>Local da Inspeção:</label>
+        <select id="unidade" onchange="carregarDatas()">
+            <option value="">Selecione o Polo...</option>
+            <option value="1GMAR">1º GMAR - BOTAFOGO</option>
+            <option value="2GMAR">2º GMAR - BARRA (GBS)</option>
+            <option value="3GMAR">3º GMAR - COPACABANA</option>
+            <option value="4º GMAR">CEPO-(CHARITAS)</option>
+        </select>
 
-<label>WhatsApp:</label>
-<input type="text" id="telefone">
+        <label>Data Disponível:</label>
+        <select id="data" onchange="carregarHorarios()">
+            <option value="">Selecione o polo primeiro</option>
+        </select>
 
-<label>Email:</label>
-<input type="email" id="email">
+        <label>Horário:</label>
+        <select id="horario">
+            <option value="">Selecione a data primeiro</option>
+        </select>
 
+        <div id="contadorVagas"></div>
+
+        <button onclick="salvar()" id="btnAcao">Confirmar Agendamento</button>
+    </div>
 </div>
 
-<div class="block-header">Bloco 2: Dados da Consulta</div>
+<div id="areaComprovante" class="comprovante-wrapper">
+    <div class="comprovante-card">
+        <img src="logo.png" alt="CBA X">
+        <h2 class="titulo-confirmado">AGENDAMENTO ODONTOLOGICO CONFIRMADO</h2>
+        <p class="subtitulo-secao">CBA X - 6ª Seção</p>
 
-<div class="form-section">
+        <div class="caixa-dados">
+            <span id="comp-nome" class="nome-militar"></span>
+            
+            <div class="info-linha">🚩 <b>RG:</b> <span id="comp-rg"></span></div>
+            <div class="info-linha">🚩 <b>Local da Inspeção:</b> <span id="comp-local"></span></div>
+            <div class="info-linha">🚩 <b>Data:</b> <span id="comp-data"></span></div>
+            <div class="info-linha">🚩 <b>Horário:</b> <span id="comp-horario"></span></div>
+            
+            <p style="font-size: 0.85rem; margin-top: 20px; color: #555; font-style: italic;">
+                (Agendamento Odontológico - CBA X)
+            </p>
+        </div>
 
-<label>Local da Inspeção:</label>
-<select id="unidade" onchange="carregarDatas()">
-<option value="">Selecione...</option>
-<option value="1GMAR">1º GMAR - BOTAFOGO</option>
-<option value="2GMAR">2º GMAR - BARRA</option>
-<option value="3GMAR">3º GMAR - COPACABANA</option>
-<option value="4GMAR">CEPO-(CHARITAS)</option>
-</select>
+        <button class="btn-pdf" onclick="window.print()">
+            🖨️ IMPRIMIR / SALVAR PDF
+        </button>
 
-<label>Data Disponível:</label>
-<select id="data" onchange="carregarHorarios()">
-<option value="">Selecione</option>
-</select>
-
-<label>Horário:</label>
-<select id="horario">
-<option value="">Selecione</option>
-</select>
-
-<button onclick="salvar()" id="btnAcao">Confirmar Agendamento</button>
-
-</div>
-
+        <a class="link-voltar" onclick="window.location.reload()">Realizar outro agendamento</a>
+    </div>
 </div>
 
 <script>
-
-const firebaseConfig={
-apiKey:"AIzaSy...",
-authDomain:"agendamento-odonto-cbax.firebaseapp.com",
-projectId:"agendamento-odonto-cbax"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
-
-const datas = {
-        "1GMAR":["11/03/26","18/03/26","25/03/26","01/04/26","08/04/26","06/05/26","13/05/26","20/05/26","27/05/26","03/06/26","10/06/26","17/06/26","24/06/26","01/07/26","08/07/26","15/07/26","22/07/26","29/07/26"],
-        "2GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
-        "3GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","07/04/26","14/04/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
-        "4º GMAR":["10/04/26","17/04/26","08/05/26","15/05/26","22/05/26","29/05/26","05/06/26","12/06/26","19/06/26","26/06/26","03/07/26","10/07/26","17/07/26","24/07/26","31/07/26"]
-    };
-
-function gerarHorarios(inicio,qtd){
-
-let lista=[];
-let hora=new Date("2000-01-01T"+inicio+":00");
-
-for(let i=0;i<qtd;i++){
-
-lista.push(hora.toTimeString().slice(0,5));
-hora.setMinutes(hora.getMinutes()+15);
-
-}
-
-return lista;
-
-}
-
-function carregarDatas(){
-
-let unidade=document.getElementById("unidade").value;
-let selectData=document.getElementById("data");
-
-selectData.innerHTML="<option value=''>Selecione</option>";
-
-if(!unidade)return;
-
-datas[unidade].forEach(d=>{
-
-let op=document.createElement("option");
-op.value=d;
-op.text=d;
-selectData.appendChild(op);
-
-});
-
-}
-
-function carregarHorarios(){
-
-let unidade=document.getElementById("unidade").value;
-let selectHorario=document.getElementById("horario");
-
-selectHorario.innerHTML="<option value=''>Selecione</option>";
-
-let horarios=[];
-        if(unidade==="1GMAR") horarios=gerarHorarios("08:00",14);
-        if(unidade==="2GMAR") horarios=[...gerarHorarios("08:00",14),...gerarHorarios("13:00",7)];
-        if(unidade==="3GMAR") horarios=gerarHorarios("08:00",11);
-        if(unidade==="4º GMAR") horarios=gerarHorarios("08:00",13);
-
-horarios.forEach(h=>{
-
-let op=document.createElement("option");
-op.value=h;
-op.text=h;
-
-selectHorario.appendChild(op);
-
-});
-
-}
-
-<script>
-
-async function salvar(){
-
-    let btn = document.getElementById("btnAcao");
-
-    let rg = document.getElementById("rg").value.trim();
-
-    let unidadeSelector = document.getElementById("unidade");
-    let unidadeValue = unidadeSelector.value;
-    let unidadeTexto = unidadeSelector.options[unidadeSelector.selectedIndex].text;
-
-    let data = document.getElementById("data").value;
-
-    let horario = document.getElementById("horario").value;
-
-    if(!unidadeValue || !data || !horario || !rg){
-        alert("Preencha todos os campos obrigatórios.");
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerText = "Verificando...";
-
-    try {
-
-        // Verifica RG duplicado
-        const consultaRG = await db.collection("agendamentos_odonto")
-        .where("rg","==",rg)
-        .get();
-
-        if(!consultaRG.empty){
-            alert("Já existe um agendamento para este RG.");
-            btn.disabled = false;
-            btn.innerText = "Confirmar Agendamento";
-            return;
-        }
-
-        // Verifica horário ocupado
-        const consulta = await db.collection("agendamentos_odonto")
-        .where("unidadeDestino","==",unidadeTexto)
-        .where("data","==",data)
-        .where("turno","==",horario)
-        .get();
-
-        if(!consulta.empty){
-            alert("Este horário já foi preenchido!");
-            btn.disabled = false;
-            btn.innerText = "Confirmar Agendamento";
-            return;
-        }
-
-        // Conversão data ISO
-        let partes = data.split("/");
-        let dataISO = partes[2]+"-"+partes[1]+"-"+partes[0];
-
-        let dados = {
-
-            unidadeOrigem: document.getElementById("unidadeServe").value,
-
-            posto: document.getElementById("posto").value,
-
-            nome: document.getElementById("nome").value.toUpperCase(),
-
-            rg: rg,
-
-            telefone: document.getElementById("telefone").value,
-
-            email: document.getElementById("email").value,
-
-            unidadeDestino: unidadeTexto,
-
-            data: data,
-
-            dataISO: dataISO,
-
-            turno: horario,
-
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-
-        };
-
-        await db.collection("agendamentos_odonto").add(dados);
-
-        mostrarConfirmacao(dados);
-
-        gerarPDF(dados);
-
-        btn.style.display="none";
-
-        window.scrollTo(0,document.body.scrollHeight);
-
-    } catch(error){
-
-        alert("Erro: "+error.message);
-
-        btn.disabled=false;
-
-        btn.innerText="Confirmar Agendamento";
-
-    }
-
-}
-
-function mostrarConfirmacao(d){
-
-    let box=document.getElementById("confirmacaoBox");
-
-    box.style.display="block";
-
-    box.innerHTML=`
-
-        <h3 style="margin-top:0;">Agendamento Confirmado!</h3>
-
-        <p><strong>Militar:</strong> ${d.posto} ${d.nome}</p>
-
-        <p><strong>Local da Inspeção:</strong> ${d.unidadeDestino} | 
-        <strong>Data:</strong> ${d.data} às ${d.turno}</p>
-
-        <p style="color:red;font-size:0.8rem;font-weight:bold;">
-        O comprovante PDF foi baixado automaticamente.
-        </p>
-
-    `;
-
-}
-
-function gerarPDF(d){
-
     const { jsPDF } = window.jspdf;
 
-    const doc = new jsPDF();
+    const firebaseConfig = {
+        apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
+        authDomain: "agendamento-odonto-cbax.firebaseapp.com",
+        projectId: "agendamento-odonto-cbax",
+        storageBucket: "agendamento-odonto-cbax.firebasestorage.app",
+        messagingSenderId: "545212689993",
+        appId: "1:545212689993:web:b4b85a03bb2dcac9739998"
+    };
 
-    doc.setFontSize(16);
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
 
-    doc.text("CBA X - COMPROVANTE DE AGENDAMENTO ODONTOLOGICO 2026",15,20);
+    const datas = {
 
-    doc.setFontSize(12);
+        "1GMAR":[
+            "11/03/2026","18/03/2026","25/03/2026",
+            "01/04/2026","08/04/2026",
+            "06/05/2026","13/05/2026","20/05/2026","27/05/2026",
+            "03/06/2026","10/06/2026","17/06/2026","24/06/2026",
+            "01/07/2026","08/07/2026","15/07/2026","22/07/2026","29/07/2026"
+        ],
 
-    doc.text("----------------------------------------------------------",15,28);
+        "2GMAR":[
+            "10/03/2026","17/03/2026","24/03/2026","31/03/2026",
+            "28/04/2026",
+            "05/05/2026","12/05/2026","19/05/2026","26/05/2026",
+            "02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026",
+            "07/07/2026","14/07/2026","21/07/2026","28/07/2026"
+        ],
 
-    doc.text("Militar: "+d.posto+" "+d.nome,15,40);
+        "3GMAR":[
+            "10/03/2026","17/03/2026","24/03/2026","31/03/2026",
+            "07/04/2026","14/04/2026","28/04/2026",
+            "05/05/2026","12/05/2026","19/05/2026","26/05/2026",
+            "02/06/2026","09/06/2026","16/06/2026","23/06/2026","30/06/2026",
+            "07/07/2026","14/07/2026","21/07/2026","28/07/2026"
+        ],
 
-    doc.text("RG: "+d.rg,15,50);
+        "4º GMAR":[
+            "10/04/2026","17/04/2026",
+            "08/05/2026","15/05/2026","22/05/2026","29/05/2026",
+            "05/06/2026","12/06/2026","19/06/2026","26/06/2026",
+            "03/07/2026","10/07/2026","17/07/2026","24/07/2026","31/07/2026"
+        ]
 
-    doc.text("Local da Inspeção: "+d.unidadeDestino,15,60);
+    };
 
-    doc.text("Data: "+d.data,15,70);
+    function gerarHorarios(inicio, quantidade){
+        let lista = [];
+        let hora = new Date("2000-01-01T" + inicio + ":00");
+        for(let i = 0; i < quantidade; i++){
+            lista.push(hora.toTimeString().slice(0,5));
+            hora.setMinutes(hora.getMinutes() + 15);
+        }
+        return lista;
+    }
 
-    doc.text("Horário: "+d.turno,15,80);
+    function obterHorariosPorUnidade(unidade){
+        let horarios = [];
+        if(unidade === "1GMAR") horarios = gerarHorarios("08:00",14);
+        if(unidade === "2GMAR") horarios = [...gerarHorarios("08:00",14), ...gerarHorarios("13:00",7)];
+        if(unidade === "3GMAR") horarios = gerarHorarios("08:00",11);
+        if(unidade === "4º GMAR") horarios = gerarHorarios("08:00",13);
+        return horarios;
+    }
 
-    doc.text("----------------------------------------------------------",15,90);
+    function carregarDatas(){
+        let unidade = document.getElementById("unidade").value;
+        let selectData = document.getElementById("data");
+        let selectHorario = document.getElementById("horario");
+        let contador = document.getElementById("contadorVagas");
 
-    doc.setFontSize(10);
+        selectData.innerHTML = "<option value=''>Selecione a data</option>";
+        selectHorario.innerHTML = "<option value=''>Selecione a data primeiro</option>";
+        contador.style.display = "none";
+        contador.innerHTML = "";
 
-    doc.text("Emitido em: "+new Date().toLocaleString(),15,100);
+        if(!unidade) return;
 
-    doc.save(`Agendamento_Odonto_${d.rg}.pdf`);
+        datas[unidade].forEach(d => {
+            let op = document.createElement("option");
+            op.value = d;
+            op.text = d;
+            selectData.appendChild(op);
+        });
+    }
 
-}
+    async function carregarHorarios(){
+        let unidade = document.getElementById("unidade").value;
+        let dataBR = document.getElementById("data").value;
+        let selectHorario = document.getElementById("horario");
+        let contador = document.getElementById("contadorVagas");
 
+        selectHorario.innerHTML = "<option value=''>Carregando horários...</option>";
+        contador.style.display = "none";
+        contador.innerHTML = "";
+
+        if(!unidade || !dataBR){
+            selectHorario.innerHTML = "<option value=''>Selecione a data primeiro</option>";
+            return;
+        }
+
+        let horarios = obterHorariosPorUnidade(unidade);
+        let partes = dataBR.split("/");
+        let dataISO = partes[2] + "-" + partes[1] + "-" + partes[0];
+
+        try {
+            const unidadeSelector = document.getElementById("unidade");
+            const unidadeTexto = unidadeSelector.options[unidadeSelector.selectedIndex].text;
+
+            const snap = await db.collection("agendamentos_odonto")
+                .where("unidadeDestino","==",unidadeTexto)
+                .where("data","==",dataBR)
+                .get();
+
+            let ocupados = {};
+            snap.forEach(doc => {
+                let h = doc.data().turno;
+                if(h) ocupados[h] = (ocupados[h] || 0) + 1;
+            });
+
+            selectHorario.innerHTML = "<option value=''>Selecione o horário</option>";
+
+            let totalHorarios = horarios.length;
+            let ocupadosTotal = 0;
+
+            horarios.forEach(h => {
+                let usado = ocupados[h] || 0;
+                if(usado >= 1) ocupadosTotal++;
+
+                let op = document.createElement("option");
+                op.value = h;
+                op.text = usado >= 1 ? `${h} - PREENCHIDO` : `${h} - DISPONÍVEL`;
+                if(usado >= 1) op.disabled = true;
+                selectHorario.appendChild(op);
+            });
+
+            let restantes = totalHorarios - ocupadosTotal;
+            contador.style.display = "block";
+            contador.innerHTML = `Vagas restantes nesta data: <strong>${restantes}</strong> de <strong>${totalHorarios}</strong>`;
+
+        } catch(error){
+            console.error(error);
+            selectHorario.innerHTML = "<option value=''>Erro ao carregar horários</option>";
+            contador.style.display = "none";
+        }
+    }
+
+    async function salvar(){
+
+        let btn = document.getElementById("btnAcao");
+
+        let rg = document.getElementById("rg").value.trim();
+        let posto = document.getElementById("posto").value;
+        let nome = document.getElementById("nome").value.toUpperCase();
+
+        let unidadeSelector = document.getElementById("unidade");
+        let unidadeTexto = unidadeSelector.options[unidadeSelector.selectedIndex].text;
+
+        let dataBR = document.getElementById("data").value;
+        let horario = document.getElementById("horario").value;
+
+        let partes = dataBR ? dataBR.split("/") : [];
+        let dataISO = partes.length === 3 ? partes[2] + "-" + partes[1] + "-" + partes[0] : "";
+
+        if(!unidadeTexto || !dataBR || !horario || !rg || !nome || !posto){
+            alert("Preencha todos os campos obrigatórios.");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Verificando...";
+
+        try {
+
+            const consultaRG = await db.collection("agendamentos_odonto")
+                .where("rg","==",rg)
+                .get();
+
+            if(!consultaRG.empty){
+                alert("Já existe um agendamento para este RG.");
+                btn.disabled = false;
+                btn.innerText = "Confirmar Agendamento";
+                return;
+            }
+
+            const consulta = await db.collection("agendamentos_odonto")
+                .where("unidadeDestino","==",unidadeTexto)
+                .where("data","==",dataBR)
+                .where("turno","==",horario)
+                .get();
+
+            if(!consulta.empty){
+                alert("Este horário já foi preenchido!");
+                btn.disabled = false;
+                btn.innerText = "Confirmar Agendamento";
+                await carregarHorarios();
+                return;
+            }
+
+            let dados = {
+                unidadeOrigem: document.getElementById("unidadeServe").value,
+                posto: posto,
+                nome: nome,
+                rg: rg,
+                telefone: document.getElementById("telefone").value,
+                email: document.getElementById("email").value,
+                unidadeDestino: unidadeTexto,
+                data: dataBR,
+                dataISO: dataISO,
+                turno: horario,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection("agendamentos_odonto").add(dados);
+
+            document.getElementById("containerForm").style.display = "none";
+            document.getElementById("comp-nome").innerText = dados.posto + " " + dados.nome;
+            document.getElementById("comp-rg").innerText = dados.rg;
+            document.getElementById("comp-local").innerText = dados.unidadeDestino;
+            document.getElementById("comp-data").innerText = dados.data;
+            document.getElementById("comp-horario").innerText = dados.turno;
+            document.getElementById("areaComprovante").style.display = "block";
+
+            gerarPDF(dados);
+            window.scrollTo(0,0);
+
+        } catch(error){
+
+            alert("Erro: " + error.message);
+            btn.disabled = false;
+            btn.innerText = "Confirmar Agendamento";
+
+        }
+
+    }
+
+    function gerarPDF(d){
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text("CBA X - COMPROVANTE DE AGENDAMENTO 2026", 15, 20);
+        doc.setFontSize(12);
+        doc.text("----------------------------------------------------------", 15, 28);
+        doc.text("Militar: " + d.posto + " " + d.nome, 15, 40);
+        doc.text("RG: " + d.rg, 15, 50);
+        doc.text("Local da Inspeção: " + d.unidadeDestino, 15, 60);
+        doc.text("Data: " + d.data, 15, 70);
+        doc.text("Horário: " + d.turno, 15, 80);
+        doc.text("----------------------------------------------------------", 15, 90);
+        doc.setFontSize(10);
+        doc.text("Emitido em: " + new Date().toLocaleString(), 15, 100);
+        doc.save(`Agendamento_Odonto_${d.rg}.pdf`);
+    }
 </script>
-
 </body>
 </html>
