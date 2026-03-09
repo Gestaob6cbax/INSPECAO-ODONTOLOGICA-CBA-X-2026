@@ -208,12 +208,14 @@
 
         textarea { 
             width: 100%; 
-            height: 100px; 
+            height: 180px; 
             margin: 15px 0; 
             padding: 15px; 
             border-radius: 10px; 
             border: 1px solid #ddd; 
             box-sizing: border-box; 
+            font-family: Consolas, monospace;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -307,13 +309,13 @@
                 lista.push({id: doc.id, ...d});
                 
                 let unRaw = d.unidadeOrigem || d.unidadeServe || d.unidade || "NÃO INFORMADO";
-                let un = unRaw.trim().toUpperCase();
-                if (un && isNaN(un) && un.length > 3) {
+                let un = String(unRaw).trim().toUpperCase();
+                if (un && isNaN(un) && un.length > 1) {
                     unidadesMap[un] = (unidadesMap[un] || 0) + 1;
                 }
 
                 let poloRaw = d.unidadeDestino || d.localAtendimento || d.poloAtendimento || "NÃO INFORMADO";
-                let polo = poloRaw.trim().toUpperCase();
+                let polo = String(poloRaw).trim().toUpperCase();
                 polosMap[polo] = (polosMap[polo] || 0) + 1;
             });
 
@@ -387,42 +389,114 @@
 
     async function importarDados() {
         const texto = document.getElementById("textoExcel").value;
-        if(!texto.trim()) return alert("Cole os dados!");
-        const linhas = texto.split('\n');
-        let contador = 0;
 
-        for(let l of linhas) {
-            if(!l.trim()) continue;
-            const c = l.split('\t');
-            if(c.length >= 7) {
-                const data = c[0]?.trim() || "";
-                let dataISO = "";
-                if(data.includes("/")){
-                    const partes = data.split("/");
-                    if(partes.length === 3){
-                        dataISO = partes[2] + "-" + partes[1] + "-" + partes[0];
-                    }
+        if (!texto.trim()) {
+            alert("Cole os dados!");
+            return;
+        }
+
+        const linhas = texto
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l);
+
+        let registros = [];
+        let ignoradas = [];
+
+        function normalizarData(dataBruta) {
+            let data = (dataBruta || "").trim();
+
+            if (data.startsWith("'")) data = data.substring(1).trim();
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+                const [ano, mes, dia] = data.split("-");
+                return {
+                    data: `${dia}/${mes}/${ano}`,
+                    dataISO: data
+                };
+            }
+
+            if (data.includes("/")) {
+                const partes = data.split("/");
+                if (partes.length === 3) {
+                    let [dia, mes, ano] = partes.map(p => p.trim());
+                    if (ano.length === 2) ano = "20" + ano;
+
+                    return {
+                        data: `${dia.padStart(2, "0")}/${mes.padStart(2, "0")}/${ano}`,
+                        dataISO: `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`
+                    };
                 }
+            }
 
-                await db.collection("agendamentos_odonto").add({
-                    data: data,
-                    dataISO: dataISO,
-                    posto: c[1]?.trim().toUpperCase(),
-                    nome: c[2]?.trim().toUpperCase(),
-                    rg: c[3]?.trim(),
-                    unidadeOrigem: c[4]?.trim(),
-                    telefone: c[5]?.trim() || "Não informado",
-                    email: c[6]?.trim() || "Não informado",
-                    unidadeDestino: c[7]?.trim(),
-                    turno: c[8]?.trim().toUpperCase(),
+            return { data: data, dataISO: "" };
+        }
+
+        for (let i = 0; i < linhas.length; i++) {
+            const linha = linhas[i];
+            const c = linha.split("\t");
+
+            if (c.length < 9) {
+                ignoradas.push(`Linha ${i + 1}: colunas insuficientes`);
+                continue;
+            }
+
+            const infoData = normalizarData(c[0]);
+
+            try {
+                registros.push({
+                    data: infoData.data || "",
+                    dataISO: infoData.dataISO || "",
+                    posto: (c[1] || "").trim().toUpperCase(),
+                    nome: (c[2] || "").trim().toUpperCase(),
+                    rg: (c[3] || "").trim(),
+                    unidadeOrigem: (c[4] || "").trim(),
+                    telefone: (c[5] || "").trim() || "Não informado",
+                    email: (c[6] || "").trim() || "Não informado",
+                    unidadeDestino: (c[7] || "").trim(),
+                    turno: (c[8] || "").trim(),
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                contador++;
+            } catch (e) {
+                ignoradas.push(`Linha ${i + 1}: erro ao processar`);
             }
         }
-        alert(`${contador} registros sincronizados!`);
-        document.getElementById("textoExcel").value = "";
-        carregarDados();
+
+        if (registros.length === 0) {
+            alert("Nenhum registro válido foi encontrado para importar.");
+            return;
+        }
+
+        try {
+            let totalImportado = 0;
+
+            for (let i = 0; i < registros.length; i += 400) {
+                const lote = registros.slice(i, i + 400);
+                const batch = db.batch();
+
+                lote.forEach(reg => {
+                    const ref = db.collection("agendamentos_odonto").doc();
+                    batch.set(ref, reg);
+                });
+
+                await batch.commit();
+                totalImportado += lote.length;
+            }
+
+            let msg = `${totalImportado} registros sincronizados com sucesso!`;
+
+            if (ignoradas.length > 0) {
+                msg += `\n\n${ignoradas.length} linha(s) foram ignoradas.\nExemplo: ${ignoradas.slice(0, 5).join(" | ")}`;
+            }
+
+            alert(msg);
+            document.getElementById("textoExcel").value = "";
+            carregarDados();
+
+        } catch (e) {
+            console.error("Erro ao importar:", e);
+            alert("Erro ao sincronizar com o Firebase. Veja o console do navegador.");
+        }
     }
 
     async function excluirRegistro(id) {
@@ -440,20 +514,27 @@
             const c = l.querySelectorAll("td");
             if(c.length){
                 dados.push({
-                    Data: "'" + c[1].innerText,
-                    Posto: c[2].innerText,
-                    Nome: c[3].innerText,
-                    RG: c[4].innerText,
-                    Unidade_Origem: c[5].innerText,
-                    Telefone: c[6].innerText,
-                    Email: c[7].innerText,
-                    Local_Inspecao: c[8].innerText,
-                    Turno: c[9].innerText
+                    Data: c[1].innerText.trim(),
+                    Posto: c[2].innerText.trim(),
+                    Nome: c[3].innerText.trim(),
+                    RG: c[4].innerText.trim(),
+                    Unidade_Origem: c[5].innerText.trim(),
+                    Telefone: c[6].innerText.trim(),
+                    Email: c[7].innerText.trim(),
+                    Local_Inspecao: c[8].innerText.trim(),
+                    Turno: c[9].innerText.trim()
                 });
             }
         });
 
         const ws = XLSX.utils.json_to_sheet(dados);
+
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let row = range.s.r + 1; row <= range.e.r; row++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
+            if (ws[cellAddress]) ws[cellAddress].t = "s";
+        }
+
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Agendamentos");
         XLSX.writeFile(wb, "Relatorio_Odonto_CBAX_2026.xlsx");
@@ -471,4 +552,3 @@
 </script>
 </body>
 </html>
-
