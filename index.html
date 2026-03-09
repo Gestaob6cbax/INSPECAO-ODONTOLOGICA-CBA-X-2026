@@ -7,27 +7,84 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
-        :root { --cba-color: #009688; --cba-blue: #0a2c6d; } /* Cor verde água para Odonto */
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 10px; display: flex; justify-content: center; }
-        .premium-card { width: 100%; max-width: 480px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 8px solid var(--cba-color); }
+        :root { --cba-color: #009688; --cba-blue: #0a2c6d; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 10px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        
+        /* Layout Premium */
+        .premium-card { 
+            width: 100%; 
+            max-width: 480px; 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            border-top: 8px solid var(--cba-color); 
+            margin-top: 20px;
+        }
+
         header { text-align: center; margin-bottom: 20px; }
         header img { width: 70px; margin-bottom: 10px; }
         header h2 { color: var(--cba-blue); font-size: 1.2rem; text-transform: uppercase; margin: 5px 0; }
-        .section-title { background: var(--cba-color); color: white; padding: 8px; font-size: 0.7rem; font-weight: bold; border-radius: 5px; margin-top: 15px; text-transform: uppercase; text-align: center; }
-        label { display: block; margin-top: 12px; font-weight: 700; color: #333; font-size: 0.65rem; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 2px solid #dfe4ea; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fcfcfc; outline: none; }
-        input:focus, select:focus { border-color: var(--cba-color); }
-        .btn-confirmar { background: var(--cba-color); color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 25px; text-transform: uppercase; font-size: 1rem; transition: 0.3s; }
-        #sucesso { display: none; text-align: center; }
-        .caixa-confirmacao { border: 2px dashed var(--cba-color); padding: 20px; border-radius: 12px; margin: 15px 0; background: #fffdfd; }
-        .nome-militar { color: var(--cba-blue); font-weight: 900; font-size: 1.1rem; text-transform: uppercase; }
-        .link-outro { display:block; margin-top:15px; cursor:pointer; font-size:0.8rem; color:var(--cba-blue); text-decoration:underline; }
         
-        @media print { 
-            .btn-confirmar, .link-outro, #form-content, .section-title { display: none !important; } 
-            .premium-card { border: none; box-shadow: none; width: 100%; } 
-            #sucesso { display: block !important; } 
+        .section-title { 
+            background: var(--cba-color); 
+            color: white; 
+            padding: 8px; 
+            font-size: 0.7rem; 
+            font-weight: bold; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+            text-transform: uppercase; 
+            text-align: center; 
         }
+
+        label { display: block; margin-top: 15px; font-weight: 700; color: #333; font-size: 0.65rem; text-transform: uppercase; }
+        
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 5px; 
+            border: 2px solid #dfe4ea; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            background: #fcfcfc; 
+            outline: none; 
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus { border-color: var(--cba-color); background: #fff; }
+
+        .btn-confirmar { 
+            background: var(--cba-color); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 30px; 
+            text-transform: uppercase; 
+            font-size: 1rem; 
+            transition: 0.3s;
+        }
+
+        .btn-confirmar:active { transform: scale(0.98); }
+
+        #sucesso { display: none; text-align: center; }
+        .caixa-confirmacao { 
+            border: 2px dashed var(--cba-color); 
+            padding: 20px; 
+            border-radius: 15px; 
+            margin: 20px 0; 
+            background: #f9fdfc; 
+            text-align: left; 
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        @media print { .btn-confirmar, .section-title, label, select, input { display: none !important; } }
     </style>
 </head>
 <body>
@@ -40,10 +97,11 @@
             <p style="font-weight: bold; font-size: 0.7rem; color: #666;">CBA X - COMANDO DE BOMBEIROS DE ÁREA</p>
         </header>
 
-        <div class="section-title">Bloco 1: Identificação</div>
-        <label>Unidade de Origem</label>
-        <select id="unidade">
-            <option value="">Selecione sua Unidade...</option>
+        <div class="section-title">Passo 1: Identificação</div>
+        
+        <label>Unidade de Origem (Onde Serve)</label>
+        <select id="unidadeServe">
+            <option value="">Selecione sua unidade...</option>
             <option>CBA X</option><option>1º GMAR</option><option>2º GMAR</option><option>3º GMAR</option>
             <option>4º GMAR</option><option>GBS</option><option>DBM 1/M</option><option>DBM 2/M</option>
             <option>DBM 3/M</option><option>DBM 4/M</option><option>DBM 5/M</option><option>DBM 6/M</option>
@@ -52,26 +110,35 @@
         <label>Posto / Graduação</label>
         <select id="posto">
             <option value="">Selecione...</option>
-            <option>SD</option><option>CB</option><option>3º SGT</option><option>2º SGT</option><option>1º SGT</option>
-            <option>SUBTEN</option><option>TEN</option><option>CAP</option><option>MAJ</option><option>TC</option><option>CEL</option>
+            <option>SD BM</option><option>CB BM</option><option>3º SGT BM</option><option>2º SGT BM</option>
+            <option>1º SGT BM</option><option>SUBTEN BM</option><option>1º TEN BM</option><option>2º TEN BM</option>
+            <option>CAP BM</option><option>MAJ BM</option><option>TC BM</option><option>CEL BM</option>
         </select>
-        
+
         <label>Nome Completo</label>
-        <input type="text" id="nome" placeholder="NOME COMPLETO" oninput="this.value = this.value.toUpperCase()">
-        
+        <input type="text" id="nome" placeholder="EX: FULANO DE TAL" oninput="this.value = this.value.toUpperCase()">
+
         <label>RG Militar</label>
         <input type="number" id="rg" placeholder="Somente números">
-        
-        <label>Telefone / WhatsApp</label>
-        <input type="tel" id="telefone" placeholder="(XX) 9XXXX-XXXX">
 
-        <div class="section-title">Bloco 2: Agendamento</div>
-        <label>Escolha a Data</label>
-        <input type="date" id="data">
+        <div class="section-title">Passo 2: Local e Data</div>
+
+        <label>Polo de Atendimento</label>
+        <select id="poloAtendimento" onchange="carregarDatas()">
+            <option value="">Selecione o Polo...</option>
+            <option value="1GMAR">1º GMAR - BOTAFOGO</option>
+            <option value="2GMAR">2º GMAR - BARRA (GBS)</option>
+            <option value="3GMAR">3º GMAR - COPACABANA</option>
+            <option value="4GMAR">4º GMAR - ITAIPU (CEPO)</option>
+        </select>
+
+        <label>Data Disponível</label>
+        <select id="dataSelect">
+            <option value="">Aguardando polo...</option>
+        </select>
 
         <label>Turno</label>
         <select id="turno">
-            <option value="">Selecione o Turno...</option>
             <option value="Manhã">Manhã (08:00 às 12:00)</option>
             <option value="Tarde">Tarde (13:00 às 17:00)</option>
         </select>
@@ -82,61 +149,94 @@
     <div id="sucesso">
         <header>
             <img src="https://raw.githubusercontent.com/gestaob6cbax/agendamento-odonto-cbax/main/logo_odonto.png">
-            <h2>Agendamento Confirmado!</h2>
+            <h2 style="color: #009688;">Sucesso!</h2>
         </header>
-        <div class="caixa-confirmacao">
-            <div class="nome-militar" id="res-nome"></div>
-            <div style="font-size: 0.85rem; margin-top: 10px; line-height: 1.6;">
-                RG: <span id="res-rg" style="font-weight:bold;"></span><br>
-                Data: <span id="res-data" style="font-weight:bold;"></span><br>
-                Turno: <span id="res-turno" style="font-weight:bold;"></span>
-            </div>
-        </div>
+        <div class="caixa-confirmacao" id="resumo"></div>
         <button class="btn-confirmar" style="background:#555" onclick="window.print()">🖨️ IMPRIMIR COMPROVANTE</button>
-        <span class="link-outro" onclick="location.reload()">Novo Agendamento</span>
+        <p style="cursor:pointer; color:var(--cba-blue); text-decoration:underline; font-size:0.8rem; margin-top:20px;" onclick="location.reload()">Realizar outro agendamento</p>
     </div>
 </div>
 
 <script>
     const firebaseConfig = { 
-        apiKey: "AIzaSyBkq2D8JFuxzPTI2z_Iirg3rYfSFfPJRXY", 
+        apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM", 
         authDomain: "agendamento-odonto-cbax.firebaseapp.com", 
         projectId: "agendamento-odonto-cbax", 
         storageBucket: "agendamento-odonto-cbax.firebasestorage.app", 
-        messagingSenderId: "1011281662526", 
-        appId: "1:1011281662526:web:1028e8a8d140684e98376f" 
+        messagingSenderId: "545212689993", 
+        appId: "1:545212689993:web:b4b85a03bb2dcac9739998" 
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    async function salvar() {
-        const dados = {
-            unidade: document.getElementById("unidade").value,
-            posto: document.getElementById("posto").value,
-            nome: document.getElementById("nome").value,
-            rg: document.getElementById("rg").value,
-            telefone: document.getElementById("telefone").value,
-            data: document.getElementById("data").value.split('-').reverse().join('/'),
-            turno: document.getElementById("turno").value,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
+    const datas = {
+        "1GMAR":["11/03/26","18/03/26","25/03/26","01/04/26","08/04/26","06/05/26","13/05/26","20/05/26","27/05/26","03/06/26","10/06/26","17/06/26","24/06/26","01/07/26","08/07/26","15/07/26","22/07/26","29/07/26"],
+        "2GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+        "3GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","07/04/26","14/04/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+        "4GMAR":["10/04/26","17/04/26","08/05/26","15/05/26","22/05/26","29/05/26","05/06/26","12/06/26","19/06/26","26/06/26","03/07/26","10/07/26","17/07/26","24/07/26","31/07/26"]
+    };
 
-        if(!dados.nome || !dados.rg || !dados.data || !dados.turno) {
-            return alert("Preencha todos os campos obrigatórios!");
+    function carregarDatas() {
+        const polo = document.getElementById("poloAtendimento").value;
+        const selectData = document.getElementById("dataSelect");
+        selectData.innerHTML = "";
+        if(datas[polo]) {
+            datas[polo].forEach(d => {
+                let opt = document.createElement("option");
+                opt.value = d; opt.text = d;
+                selectData.add(opt);
+            });
+        }
+    }
+
+    async function salvar() {
+        const rg = document.getElementById("rg").value;
+        const nome = document.getElementById("nome").value;
+        const btn = document.getElementById("btnSalvar");
+
+        if(!nome || !rg || !document.getElementById("dataSelect").value) {
+            return alert("Por favor, preencha todos os campos obrigatórios!");
         }
 
+        btn.disabled = true;
+        btn.innerText = "PROCESSANDO...";
+
         try {
-            await db.collection("agendamentos_odonto").add(dados);
+            const check = await db.collection("agendamentos_odonto").where("rg", "==", rg).get();
+            if (!check.empty) {
+                alert("Já existe um agendamento vinculado a este RG!");
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR AGENDAMENTO";
+                return;
+            }
+
+            const payload = {
+                unidadeServe: document.getElementById("unidadeServe").value,
+                posto: document.getElementById("posto").value,
+                nome: nome,
+                rg: rg,
+                polo: document.getElementById("poloAtendimento").value,
+                data: document.getElementById("dataSelect").value,
+                turno: document.getElementById("turno").value,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection("agendamentos_odonto").add(payload);
             
             document.getElementById("form-content").style.display = "none";
             document.getElementById("sucesso").style.display = "block";
-            document.getElementById("res-nome").innerText = dados.nome;
-            document.getElementById("res-rg").innerText = dados.rg;
-            document.getElementById("res-data").innerText = dados.data;
-            document.getElementById("res-turno").innerText = dados.turno;
+            document.getElementById("resumo").innerHTML = `
+                <strong>Militar:</strong> ${payload.posto} ${payload.nome}<br>
+                <strong>RG:</strong> ${payload.rg}<br>
+                <strong>Local:</strong> ${payload.polo}<br>
+                <strong>Data:</strong> ${payload.data}<br>
+                <strong>Turno:</strong> ${payload.turno}
+            `;
         } catch (e) {
             alert("Erro ao salvar: " + e.message);
+            btn.disabled = false;
+            btn.innerText = "CONFIRMAR AGENDAMENTO";
         }
     }
 </script>
