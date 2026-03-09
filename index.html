@@ -191,12 +191,12 @@ projectId:"agendamento-odonto-cbax"
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-const datas={
-"1GMAR":["11/03/2026","18/03/2026","25/03/2026"],
-"2GMAR":["10/03/2026","17/03/2026","24/03/2026"],
-"3GMAR":["10/03/2026","17/03/2026","24/03/2026"],
-"4GMAR":["10/04/2026","17/04/2026"]
-};
+const datas = {
+        "1GMAR":["11/03/26","18/03/26","25/03/26","01/04/26","08/04/26","06/05/26","13/05/26","20/05/26","27/05/26","03/06/26","10/06/26","17/06/26","24/06/26","01/07/26","08/07/26","15/07/26","22/07/26","29/07/26"],
+        "2GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+        "3GMAR":["10/03/26","17/03/26","24/03/26","31/03/26","07/04/26","14/04/26","28/04/26","05/05/26","12/05/26","19/05/26","26/05/26","02/06/26","09/06/26","16/06/26","23/06/26","30/06/26","07/07/26","14/07/26","21/07/26","28/07/26"],
+        "4º GMAR":["10/04/26","17/04/26","08/05/26","15/05/26","22/05/26","29/05/26","05/06/26","12/06/26","19/06/26","26/06/26","03/07/26","10/07/26","17/07/26","24/07/26","31/07/26"]
+    };
 
 function gerarHorarios(inicio,qtd){
 
@@ -242,11 +242,10 @@ let selectHorario=document.getElementById("horario");
 selectHorario.innerHTML="<option value=''>Selecione</option>";
 
 let horarios=[];
-
-if(unidade==="1GMAR")horarios=gerarHorarios("08:00",14);
-if(unidade==="2GMAR")horarios=gerarHorarios("08:00",14);
-if(unidade==="3GMAR")horarios=gerarHorarios("08:00",11);
-if(unidade==="4GMAR")horarios=gerarHorarios("08:00",13);
+        if(unidade==="1GMAR") horarios=gerarHorarios("08:00",14);
+        if(unidade==="2GMAR") horarios=[...gerarHorarios("08:00",14),...gerarHorarios("13:00",7)];
+        if(unidade==="3GMAR") horarios=gerarHorarios("08:00",11);
+        if(unidade==="4º GMAR") horarios=gerarHorarios("08:00",13);
 
 horarios.forEach(h=>{
 
@@ -260,81 +259,164 @@ selectHorario.appendChild(op);
 
 }
 
+<script>
+
 async function salvar(){
 
-let unidadeServe=document.getElementById("unidadeServe").value;
-let posto=document.getElementById("posto").value;
-let nome=document.getElementById("nome").value;
-let rg=document.getElementById("rg").value;
-let telefone=document.getElementById("telefone").value;
-let email=document.getElementById("email").value;
-let unidadeDestino=document.getElementById("unidade").value;
-let dataBR=document.getElementById("data").value;
-let horario=document.getElementById("horario").value;
+    let btn = document.getElementById("btnAcao");
 
-if(!unidadeServe||!posto||!nome||!rg||!dataBR||!horario||!unidadeDestino){
+    let rg = document.getElementById("rg").value.trim();
 
-alert("Preencha todos os campos obrigatórios.");
-return;
+    let unidadeSelector = document.getElementById("unidade");
+    let unidadeValue = unidadeSelector.value;
+    let unidadeTexto = unidadeSelector.options[unidadeSelector.selectedIndex].text;
+
+    let data = document.getElementById("data").value;
+
+    let horario = document.getElementById("horario").value;
+
+    if(!unidadeValue || !data || !horario || !rg){
+        alert("Preencha todos os campos obrigatórios.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Verificando...";
+
+    try {
+
+        // Verifica RG duplicado
+        const consultaRG = await db.collection("agendamentos_odonto")
+        .where("rg","==",rg)
+        .get();
+
+        if(!consultaRG.empty){
+            alert("Já existe um agendamento para este RG.");
+            btn.disabled = false;
+            btn.innerText = "Confirmar Agendamento";
+            return;
+        }
+
+        // Verifica horário ocupado
+        const consulta = await db.collection("agendamentos_odonto")
+        .where("unidadeDestino","==",unidadeTexto)
+        .where("data","==",data)
+        .where("turno","==",horario)
+        .get();
+
+        if(!consulta.empty){
+            alert("Este horário já foi preenchido!");
+            btn.disabled = false;
+            btn.innerText = "Confirmar Agendamento";
+            return;
+        }
+
+        // Conversão data ISO
+        let partes = data.split("/");
+        let dataISO = partes[2]+"-"+partes[1]+"-"+partes[0];
+
+        let dados = {
+
+            unidadeOrigem: document.getElementById("unidadeServe").value,
+
+            posto: document.getElementById("posto").value,
+
+            nome: document.getElementById("nome").value.toUpperCase(),
+
+            rg: rg,
+
+            telefone: document.getElementById("telefone").value,
+
+            email: document.getElementById("email").value,
+
+            unidadeDestino: unidadeTexto,
+
+            data: data,
+
+            dataISO: dataISO,
+
+            turno: horario,
+
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+
+        };
+
+        await db.collection("agendamentos_odonto").add(dados);
+
+        mostrarConfirmacao(dados);
+
+        gerarPDF(dados);
+
+        btn.style.display="none";
+
+        window.scrollTo(0,document.body.scrollHeight);
+
+    } catch(error){
+
+        alert("Erro: "+error.message);
+
+        btn.disabled=false;
+
+        btn.innerText="Confirmar Agendamento";
+
+    }
 
 }
 
-let partes=dataBR.split("/");
-let dataISO=partes[2]+"-"+partes[1]+"-"+partes[0];
+function mostrarConfirmacao(d){
 
-try{
+    let box=document.getElementById("confirmacaoBox");
 
-await db.runTransaction(async (transaction)=>{
+    box.style.display="block";
 
-const ref=db.collection("agendamentos_odonto");
+    box.innerHTML=`
 
-const consulta=await ref
-.where("dataISO","==",dataISO)
-.where("horario","==",horario)
-.where("unidadeDestino","==",unidadeDestino)
-.get();
+        <h3 style="margin-top:0;">Agendamento Confirmado!</h3>
 
-if(!consulta.empty){
+        <p><strong>Militar:</strong> ${d.posto} ${d.nome}</p>
 
-throw "HORARIO_OCUPADO";
+        <p><strong>Local da Inspeção:</strong> ${d.unidadeDestino} | 
+        <strong>Data:</strong> ${d.data} às ${d.turno}</p>
 
-}
+        <p style="color:red;font-size:0.8rem;font-weight:bold;">
+        O comprovante PDF foi baixado automaticamente.
+        </p>
 
-const novo=ref.doc();
-
-transaction.set(novo,{
-unidadeServe,
-posto,
-nome,
-rg,
-telefone,
-email,
-unidadeDestino,
-data:dataBR,
-dataISO,
-horario,
-timestamp:firebase.firestore.FieldValue.serverTimestamp()
-});
-
-});
-
-alert("Agendamento confirmado com sucesso!");
-
-location.reload();
-
-}catch(e){
-
-if(e==="HORARIO_OCUPADO"){
-
-alert("⚠️ Este horário acabou de ser ocupado. Escolha outro.");
-
-}else{
-
-alert("Erro ao salvar agendamento.");
+    `;
 
 }
 
-}
+function gerarPDF(d){
+
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+
+    doc.text("CBA X - COMPROVANTE DE AGENDAMENTO ODONTOLOGICO 2026",15,20);
+
+    doc.setFontSize(12);
+
+    doc.text("----------------------------------------------------------",15,28);
+
+    doc.text("Militar: "+d.posto+" "+d.nome,15,40);
+
+    doc.text("RG: "+d.rg,15,50);
+
+    doc.text("Local da Inspeção: "+d.unidadeDestino,15,60);
+
+    doc.text("Data: "+d.data,15,70);
+
+    doc.text("Horário: "+d.turno,15,80);
+
+    doc.text("----------------------------------------------------------",15,90);
+
+    doc.setFontSize(10);
+
+    doc.text("Emitido em: "+new Date().toLocaleString(),15,100);
+
+    doc.save(`Agendamento_Odonto_${d.rg}.pdf`);
 
 }
 
