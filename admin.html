@@ -151,7 +151,6 @@
 
         .btn-refresh { background: var(--cba-blue); }
         .btn-excel { background: var(--success); }
-        .btn-danger { background: var(--cba-red); }
 
         .table-container { 
             background: white; 
@@ -304,22 +303,22 @@
                 const d = doc.data();
                 lista.push({id: doc.id, ...d});
                 
-              // Alteração: Lógica de soma com FILTRO para ignorar RGs e agrupar quartéis
+                // --- FILTRO DE UNIDADES (Remove RGs) ---
                 let unRaw = d.unidadeOrigem || d.unidadeServe || d.unidade || "NÃO INFORMADO";
                 let un = unRaw.trim().toUpperCase();
                 
-                // FILTRO: Só cria o card se NÃO for um número e tiver mais de 3 caracteres
-                // Isso impede que números de RG (como na sua foto) gerem cards brancos
+                // Se NÃO for número e tiver mais de 3 letras, cria o card da unidade
                 if (un && isNaN(un) && un.length > 3) {
                     unidadesMap[un] = (unidadesMap[un] || 0) + 1;
-                } else if (un !== "NÃO INFORMADO") {
-                    // Agrupa erros de preenchimento ou RGs em um único card de controle
-                    unidadesMap["DADOS A CONFERIR"] = (unidadesMap["DADOS A CONFERIR"] || 0) + 1;
                 }
 
+                // --- FILTRO DE POLOS ---
                 let poloRaw = d.unidadeDestino || d.poloAtendimento || "NÃO INFORMADO";
                 let polo = poloRaw.trim().toUpperCase();
                 polosMap[polo] = (polosMap[polo] || 0) + 1;
+            });
+
+            // Ordenação (mantendo o que você já tinha)
             lista.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
             let html = "";
@@ -346,7 +345,8 @@
             renderCards(polosMap, "gridPolos", "--success");
 
         } catch (e) { 
-            console.error(e); 
+            console.error("Erro ao carregar dados:", e); 
+            corpo.innerHTML = '<tr><td colspan="10" style="text-align:center; color:red;">Erro na conexão.</td></tr>';
         }
     }
 
@@ -394,8 +394,6 @@
             carregarDados();
         }
     }
-
-    // Alteração: A função resetarTudo foi removida completamente.
 
     function baixarPlanilha() {
         const table = document.getElementById("tabelaADM");
