@@ -282,15 +282,19 @@
 <div class="section-title">Distribuição por Polo de Atendimento (Local da Consulta)</div>
 <div id="gridPolos" class="grid-cards"></div>
 
-<div class="controls-box">
+<div class="controls-box" style="justify-content: space-between;">
     <input type="text" id="lupa" placeholder="🔍 Pesquise por Nome, RG, Unidade, Telefone ou E-mail..." onkeyup="filtrar()">
-    <button class="btn btn-refresh" onclick="carregarDados()">🔄 Sincronizar Agora</button>
+    <div style="display:flex; gap:10px;">
+        <button class="btn btn-danger" onclick="excluirMassa()" style="background-color: #c00000;">🗑️ Excluir Selecionados</button>
+        <button class="btn btn-refresh" onclick="carregarDados()">🔄 Sincronizar Agora</button>
+    </div>
 </div>
 
 <div class="table-container">
     <table id="tabelaADM">
         <thead>
             <tr>
+                <th style="width: 40px;"><input type="checkbox" id="selecionarTodos" onclick="toggleTodos()"></th>
                 <th>Data da Consulta</th>
                 <th>Turno/Horário</th>
                 <th>Nome do Militar</th>
@@ -303,7 +307,7 @@
             </tr>
         </thead>
         <tbody id="corpoTabela">
-            <tr><td colspan="9" style="text-align:center; padding:60px;">Iniciando conexão com o Firebase...</td></tr>
+            <tr><td colspan="10" style="text-align:center; padding:60px;">Iniciando conexão com o Firebase...</td></tr>
         </tbody>
     </table>
 </div>
@@ -325,7 +329,6 @@
 </footer>
 
 <script>
-    // Configurações do Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
         authDomain: "agendamento-odonto-cbax.firebaseapp.com",
@@ -335,17 +338,12 @@
         appId: "1:545212689993:web:b4b85a03bb2dcac9739998"
     };
 
-    // Inicialização do Banco
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Função Principal de Carregamento
     async function carregarDados() {
-        console.log("Iniciando busca de dados...");
         const corpo = document.getElementById("corpoTabela");
-        corpo.innerHTML = '<tr><td colspan="9" style="text-align:center;">Buscando informações no banco...</td></tr>';
+        corpo.innerHTML = '<tr><td colspan="10" style="text-align:center;">Buscando informações no banco...</td></tr>';
         
         try {
             const snap = await db.collection("agendamentos").get();
@@ -357,27 +355,25 @@
                 const dados = doc.data();
                 listaAgendamentos.push({id: doc.id, ...dados});
                 
-                // Lógica de Contagem para Cards de Origem
                 let unidadeOrigem = dados.unidadeServe || "N/I";
                 mapaUnidades[unidadeOrigem] = (mapaUnidades[unidadeOrigem] || 0) + 1;
 
-                // Lógica de Contagem para Cards de Polos
                 let poloLocal = dados.unidade || "Não informado";
                 mapaPolos[poloLocal] = (mapaPolos[poloLocal] || 0) + 1;
             });
 
-            // Ordenação por data de criação (mais novos primeiro)
+            // CORREÇÃO: Ordenação segura que protege dados antigos sem campo 'criadoEm'
             listaAgendamentos.sort((a, b) => {
-                const timeA = a.criadoEm?.seconds || 0;
-                const timeB = b.criadoEm?.seconds || 0;
+                const timeA = a.criadoEm ? (a.criadoEm.seconds || 0) : 0;
+                const timeB = b.criadoEm ? (b.criadoEm.seconds || 0) : 0;
                 return timeB - timeA;
             });
 
-            // Montagem da Tabela HTML
             let tabelaHtml = "";
             listaAgendamentos.forEach(item => {
                 tabelaHtml += `
                 <tr>
+                    <td><input type="checkbox" class="checkMilitar" value="${item.id}"></td>
                     <td><b>${item.data || '---'}</b></td>
                     <td>${item.horario || '-'}</td>
                     <td>${item.nome || 'NÃO IDENTIFICADO'}</td>
@@ -387,51 +383,55 @@
                     <td style="font-size: 0.8rem; color: #555;">${item.email || '-'}</td>
                     <td style="color:var(--odonto-color); font-weight:bold">${item.unidade || '-'}</td>
                     <td>
-                        <button class="btn-del" title="Excluir Registro" onclick="excluirRegistro('${item.id}')">
-                            🗑️
-                        </button>
+                        <button class="btn-del" title="Excluir Registro" onclick="excluirRegistro('${item.id}')">🗑️</button>
                     </td>
                 </tr>`;
             });
 
-            // Atualização da Interface
-            corpo.innerHTML = tabelaHtml || '<tr><td colspan="9" style="text-align:center;">Nenhum agendamento registrado no sistema.</td></tr>';
+            corpo.innerHTML = tabelaHtml || '<tr><td colspan="10" style="text-align:center;">Nenhum agendamento registrado.</td></tr>';
             document.getElementById("totalGeral").innerText = listaAgendamentos.length;
 
-            // Renderização dos Cards de Resumo
             renderizarCardsResumo(mapaUnidades, "gridUnidades", "--cba-blue");
             renderizarCardsResumo(mapaPolos, "gridPolos", "--success");
 
         } catch (erro) {
-            console.error("Erro ao carregar dados do Firebase:", erro);
-            corpo.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">Erro de conexão. Verifique o console.</td></tr>';
+            corpo.innerHTML = '<tr><td colspan="10" style="text-align:center; color:red;">Erro de conexão.</td></tr>';
         }
     }
 
-    // Função Auxiliar para Criar os Mini Cards
     function renderizarCardsResumo(mapaDados, containerId, variavelCor) {
         let cardsHtml = "";
-        const chavesOrdenadas = Object.keys(mapaDados).sort();
-        
-        chavesOrdenadas.forEach(chave => {
-            cardsHtml += `
-                <div class="card-unidade" style="border-bottom-color: var(${variavelCor})">
-                    <h4>${chave}</h4>
-                    <p>${mapaDados[chave]}</p>
-                </div>`;
+        Object.keys(mapaDados).sort().forEach(chave => {
+            cardsHtml += `<div class="card-unidade" style="border-bottom-color: var(${variavelCor})"><h4>${chave}</h4><p>${mapaDados[chave]}</p></div>`;
         });
         document.getElementById(containerId).innerHTML = cardsHtml;
     }
 
-    // Função para Importar do Excel (Controlando cada campo individualmente)
+    function toggleTodos() {
+        const pai = document.getElementById("selecionarTodos");
+        const filhos = document.querySelectorAll(".checkMilitar");
+        filhos.forEach(c => c.checked = pai.checked);
+    }
+
+    async function excluirMassa() {
+        const selecionados = document.querySelectorAll(".checkMilitar:checked");
+        if (selecionados.length === 0) return alert("Selecione os registros que deseja apagar.");
+
+        if (confirm(`Deseja excluir permanentemente ${selecionados.length} registros?`)) {
+            const batch = db.batch();
+            selecionados.forEach(c => {
+                batch.delete(db.collection("agendamentos").doc(c.value));
+            });
+            await batch.commit();
+            alert("Registros excluídos!");
+            carregarDados();
+        }
+    }
+
     async function importarDados() {
         const areaTexto = document.getElementById("textoExcel");
         const conteudo = areaTexto.value.trim();
-        
-        if(!conteudo) {
-            alert("Por favor, cole os dados da planilha antes de continuar.");
-            return;
-        }
+        if(!conteudo) return alert("Cole os dados da planilha!");
 
         const linhasExcel = conteudo.split("\n");
         const batchFirebase = db.batch();
@@ -439,102 +439,63 @@
 
         linhasExcel.forEach(linha => {
             const colunas = linha.split("\t");
-            
-            // Verificação de segurança: precisa ter ao menos Data, Nome e RG
             if(colunas.length >= 4) {
                 const novaRef = db.collection("agendamentos").doc();
-                
-                // Mapeamento explícito das colunas do Excel para o Firebase
-                const objetoDados = {
-                    data: colunas[0] ? colunas[0].trim() : "",
-                    horario: colunas[1] ? colunas[1].trim() : "",
-                    nome: colunas[2] ? colunas[2].trim().toUpperCase() : "SEM NOME",
-                    rg: colunas[3] ? colunas[3].trim() : "",
-                    unidadeServe: colunas[4] ? colunas[4].trim() : "N/I",
-                    telefone: colunas[5] ? colunas[5].trim() : "-",
-                    email: colunas[6] ? colunas[6].trim().toLowerCase() : "-",
-                    unidade: colunas[7] ? colunas[7].trim() : "Não informado",
-                    criadoEm: new Date()
-                };
-
-                batchFirebase.set(novaRef, objetoDados);
+                batchFirebase.set(novaRef, {
+                    data: colunas[0]?.trim() || "",
+                    horario: colunas[1]?.trim() || "",
+                    nome: colunas[2]?.trim().toUpperCase() || "SEM NOME",
+                    rg: colunas[3]?.trim() || "",
+                    unidadeServe: colunas[4]?.trim() || "N/I",
+                    telefone: colunas[5]?.trim() || "-",
+                    email: colunas[6]?.trim().toLowerCase() || "-",
+                    unidade: colunas[7]?.trim() || "Não informado",
+                    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+                });
                 contadorSucesso++;
             }
         });
 
-        try {
-            if(contadorSucesso > 0) {
-                await batchFirebase.commit();
-                alert("Sucesso! " + contadorSucesso + " registros foram importados para a nuvem.");
-                areaTexto.value = "";
-                carregarDados();
-            } else {
-                alert("O formato dos dados parece incorreto. Certifique-se de copiar as colunas do Excel.");
-            }
-        } catch (e) {
-            console.error("Erro no commit do batch:", e);
-            alert("Erro ao salvar no banco. Tente novamente.");
+        if(contadorSucesso > 0) {
+            await batchFirebase.commit();
+            alert(contadorSucesso + " registros importados!");
+            areaTexto.value = "";
+            carregarDados();
         }
     }
 
-    // Função para Apagar um Registro Único
     async function excluirRegistro(documentId) {
-        const confirmacao = confirm("Tem certeza que deseja remover permanentemente este agendamento?");
-        if(confirmacao) {
-            try {
-                await db.collection("agendamentos").doc(documentId).delete();
-                carregarDados();
-            } catch (err) {
-                alert("Erro ao excluir o registro.");
-            }
+        if(confirm("Deseja remover este agendamento?")) {
+            await db.collection("agendamentos").doc(documentId).delete();
+            carregarDados();
         }
     }
 
-    // Função para Limpar Todo o Banco (CUIDADO)
     async function resetarTudo() {
-        const senhaAdmin = confirm("🚨 ATENÇÃO: Esta ação apagará TODOS os agendamentos de 2026. Deseja prosseguir?");
-        if(senhaAdmin) {
-            const segundaConfirma = confirm("ÚLTIMO AVISO: Os dados não poderão ser recuperados. Confirmar limpeza total?");
-            if(segundaConfirma) {
-                try {
-                    const snap = await db.collection("agendamentos").get();
-                    const batchLimpeza = db.batch();
-                    snap.forEach(doc => batchLimpeza.delete(doc.ref));
-                    await batchLimpeza.commit();
-                    carregarDados();
-                    alert("Banco de dados resetado com sucesso.");
-                } catch (e) {
-                    alert("Erro ao tentar limpar o banco.");
-                }
+        if(confirm("🚨 PERIGO: Apagar TODOS os registros de 2026?")) {
+            if(confirm("Confirma a limpeza total do banco?")) {
+                const snap = await db.collection("agendamentos").get();
+                const batchLimpeza = db.batch();
+                snap.forEach(doc => batchLimpeza.delete(doc.ref));
+                await batchLimpeza.commit();
+                carregarDados();
             }
         }
     }
 
-    // Função para Baixar Relatório XLSX
     function baixarPlanilha() {
-        const elementoTabela = document.getElementById("tabelaADM");
-        const workbook = XLSX.utils.table_to_book(elementoTabela);
-        XLSX.writeFile(workbook, "Relatorio_CBAX_Odonto_2026.xlsx");
+        const wb = XLSX.utils.table_to_book(document.getElementById("tabelaADM"));
+        XLSX.writeFile(wb, "Relatorio_CBAX_Odonto_2026.xlsx");
     }
 
-    // Função de Filtro Dinâmico (Busca em tempo real)
     function filtrar() {
-        const termoBusca = document.getElementById("lupa").value.toUpperCase();
-        const todasAsLinhas = document.querySelectorAll("#corpoTabela tr");
-        
-        todasAsLinhas.forEach(linha => {
-            const textoDaLinha = linha.innerText.toUpperCase();
-            if(textoDaLinha.indexOf(termoBusca) > -1) {
-                linha.style.display = "";
-            } else {
-                linha.style.display = "none";
-            }
+        const busca = document.getElementById("lupa").value.toUpperCase();
+        document.querySelectorAll("#corpoTabela tr").forEach(linha => {
+            linha.style.display = linha.innerText.toUpperCase().includes(busca) ? "" : "none";
         });
     }
 
-    // Iniciar carregamento automático ao abrir a página
     window.onload = carregarDados;
 </script>
-
 </body>
 </html>
