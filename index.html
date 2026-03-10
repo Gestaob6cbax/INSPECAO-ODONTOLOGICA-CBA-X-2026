@@ -102,6 +102,19 @@
             display: none;
         }
 
+        #avisoAgendaFechada {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #b71c1c;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
         #areaComprovante {
             display: none;
             width: 100%;
@@ -245,6 +258,10 @@
 
         <div id="contadorVagas"></div>
 
+        <div id="avisoAgendaFechada">
+            ⚠️ AGENDAMENTO ODONTOLÓGICO TEMPORARIAMENTE SUSPENSO
+        </div>
+
         <button onclick="salvar()" id="btnAcao">Confirmar Agendamento</button>
     </div>
 </div>
@@ -278,6 +295,9 @@
 
 <script>
     const { jsPDF } = window.jspdf;
+
+    const AGENDA_ABERTA = false;
+    const MENSAGEM_AGENDA_FECHADA = "⚠️ AGENDAMENTO ODONTOLÓGICO TEMPORARIAMENTE SUSPENSO.\n\nAguarde nova liberação da 6ª Seção.";
 
     const firebaseConfig = {
         apiKey: "AIzaSyD3Z8mJPvGrRzwpYLymAXYcRQat2ccUqVM",
@@ -325,6 +345,29 @@
         ]
 
     };
+
+    function configurarStatusAgenda(){
+        const aviso = document.getElementById("avisoAgendaFechada");
+        const btn = document.getElementById("btnAcao");
+
+        if(!AGENDA_ABERTA){
+            if(aviso) aviso.style.display = "block";
+            if(btn){
+                btn.disabled = true;
+                btn.innerText = "Agendamento Temporariamente Suspenso";
+                btn.style.background = "#999";
+                btn.style.cursor = "not-allowed";
+            }
+        } else {
+            if(aviso) aviso.style.display = "none";
+            if(btn){
+                btn.disabled = false;
+                btn.innerText = "Confirmar Agendamento";
+                btn.style.background = "var(--odonto-main)";
+                btn.style.cursor = "pointer";
+            }
+        }
+    }
 
     function gerarHorarios(inicio, quantidade){
         let lista = [];
@@ -382,8 +425,6 @@
         }
 
         let horarios = obterHorariosPorUnidade(unidade);
-        let partes = dataBR.split("/");
-        let dataISO = partes[2] + "-" + partes[1] + "-" + partes[0];
 
         try {
             const unidadeSelector = document.getElementById("unidade");
@@ -428,6 +469,11 @@
     }
 
     async function salvar(){
+
+        if(!AGENDA_ABERTA){
+            alert(MENSAGEM_AGENDA_FECHADA);
+            return;
+        }
 
         let btn = document.getElementById("btnAcao");
 
@@ -532,6 +578,10 @@
         doc.text("Emitido em: " + new Date().toLocaleString(), 15, 100);
         doc.save(`Agendamento_Odonto_${d.rg}.pdf`);
     }
+
+    window.onload = function(){
+        configurarStatusAgenda();
+    };
 </script>
 </body>
 </html>
