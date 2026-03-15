@@ -316,6 +316,35 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    function gerarIdVaga(unidadeCodigo, dataBR) {
+        return `${unidadeCodigo}_${dataBR.replaceAll("/", "-")}`;
+    }
+
+    async function devolverVagaAoCancelar(registro) {
+        const unidadeCodigo = registro.unidadeCodigo;
+        const dataBR = registro.data;
+
+        if (!unidadeCodigo || !dataBR) return;
+
+        const ref = db.collection("controle_vagas_odonto").doc(gerarIdVaga(unidadeCodigo, dataBR));
+        const doc = await ref.get();
+
+        let vagasAtuais = 0;
+
+        if (doc.exists) {
+            vagasAtuais = Number(doc.data().vagasRestantes || 0);
+        } else {
+            return;
+        }
+
+        await ref.set({
+            unidadeCodigo: unidadeCodigo,
+            data: dataBR,
+            vagasRestantes: vagasAtuais + 1,
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    }
+
     function montarBadgeTurno(turno) {
         const valor = (turno || "").toUpperCase().trim();
 
@@ -407,15 +436,20 @@
     async function excluirSelecionados() {
         const selecionados = document.querySelectorAll('.checkItem:checked');
         if (selecionados.length === 0) return alert("Selecione pelo menos um registro!");
-        
+
         if (confirm(`Deseja excluir permanentemente os ${selecionados.length} agendamentos selecionados?`)) {
-            const batch = db.batch();
-            selecionados.forEach(cb => {
+            for (const cb of selecionados) {
                 const ref = db.collection("agendamentos_odonto").doc(cb.value);
-                batch.delete(ref);
-            });
-            
-            await batch.commit();
+                const snap = await ref.get();
+
+                if (snap.exists) {
+                    const registro = snap.data();
+                    await devolverVagaAoCancelar(registro);
+                }
+
+                await ref.delete();
+            }
+
             alert("Exclusão concluída com sucesso!");
             carregarDados();
             document.getElementById("checkTodos").checked = false;
@@ -544,7 +578,15 @@
 
     async function excluirRegistro(id) {
         if (confirm("Excluir este agendamento?")) {
-            await db.collection("agendamentos_odonto").doc(id).delete();
+            const ref = db.collection("agendamentos_odonto").doc(id);
+            const snap = await ref.get();
+
+            if (snap.exists) {
+                const registro = snap.data();
+                await devolverVagaAoCancelar(registro);
+            }
+
+            await ref.delete();
             carregarDados();
         }
     }
