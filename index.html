@@ -283,7 +283,7 @@
             ⚠️ AGENDAMENTO ODONTOLÓGICO TEMPORARIAMENTE SUSPENSO
         </div>
 
-        <button onclick="salvar()" id="btnAcao">Confirmar Agendamento</button>
+        <button id="btnAcao">Agendamento Temporariamente Suspenso</button>
     </div>
 </div>
 
@@ -317,7 +317,7 @@
 <script>
     const { jsPDF } = window.jspdf;
 
-    const AGENDA_ABERTA = true;
+    const AGENDA_ABERTA = false;
     const MENSAGEM_AGENDA_FECHADA = "⚠️ AGENDAMENTO ODONTOLÓGICO TEMPORARIAMENTE SUSPENSO.\n\nAguarde nova liberação da 6ª Seção.";
 
     const firebaseConfig = {
@@ -477,6 +477,7 @@
                 btn.innerText = "Confirmar Agendamento";
                 btn.style.background = "var(--odonto-main)";
                 btn.style.cursor = "pointer";
+                btn.onclick = salvar;
             }
         }
     }
